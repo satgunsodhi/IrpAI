@@ -122,12 +122,12 @@ def build_wheel(variant: str) -> None:
     variant_path = dist_path / variant
     variant_path.mkdir(exist_ok=True)
     
-    for file in dist_path.glob("irpai-0.1.0-py3-none-any.whl"):
+    for file in dist_path.glob("irpai-*-py3-none-any.whl"):
         dest = variant_path / file.name
         file.rename(dest)
         print(f"   Moved: {file.name} → {variant}/{file.name}")
     
-    for file in dist_path.glob("irpai-0.1.0.tar.gz"):
+    for file in dist_path.glob("irpai-*.tar.gz"):
         dest = variant_path / file.name
         file.rename(dest)
         print(f"   Moved: {file.name} → {variant}/{file.name}")
