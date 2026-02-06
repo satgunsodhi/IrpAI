@@ -29,6 +29,20 @@ jobs:
       - name: Build all variants
         run: python build_all.py
       
+      - name: Verify build artifacts
+        run: |
+          echo "📦 Checking built files..."
+          ls -R dist/
+          echo ""
+          echo "Core files:"
+          ls -lh dist/core/
+          echo ""
+          echo "Full files:"
+          ls -lh dist/full/
+          echo ""
+          echo "Dev files:"
+          ls -lh dist/dev/
+      
       - name: Extract version from tag
         id: get_version
         run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
@@ -91,20 +105,33 @@ jobs:
           - `dev/` - Dev variant (wheel + source)
           EOF
       
+      - name: Prepare release assets
+        run: |
+          # Create a releases directory with properly named files
+          mkdir -p releases
+          
+          # Copy and rename files with variant prefix for clarity
+          cp dist/core/*.whl releases/irpai-${{ steps.get_version.outputs.VERSION }}-core-py3-none-any.whl || true
+          cp dist/core/*.tar.gz releases/irpai-${{ steps.get_version.outputs.VERSION }}-core.tar.gz || true
+          
+          cp dist/full/*.whl releases/irpai-${{ steps.get_version.outputs.VERSION }}-full-py3-none-any.whl || true
+          cp dist/full/*.tar.gz releases/irpai-${{ steps.get_version.outputs.VERSION }}-full.tar.gz || true
+          
+          cp dist/dev/*.whl releases/irpai-${{ steps.get_version.outputs.VERSION }}-dev-py3-none-any.whl || true
+          cp dist/dev/*.tar.gz releases/irpai-${{ steps.get_version.outputs.VERSION }}-dev.tar.gz || true
+          
+          echo "📦 Release assets prepared:"
+          ls -lh releases/
+      
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           name: Release v${{ steps.get_version.outputs.VERSION }}
           body_path: release_notes.md
           draft: false
           prerelease: false
-          files: |
-            dist/core/irpai-*.whl
-            dist/core/irpai-*.tar.gz
-            dist/full/irpai-*.whl
-            dist/full/irpai-*.tar.gz
-            dist/dev/irpai-*.whl
-            dist/dev/irpai-*.tar.gz
+          files: releases/*
+          fail_on_unmatched_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
