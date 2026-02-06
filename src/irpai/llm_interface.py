@@ -212,11 +212,15 @@ class ContextEmbedder:
         self._ensure_loaded()
         import numpy as np
 
+        if self._model is None:
+            raise RuntimeError("Embedding model failed to load")
+        model = self._model
+
         embeddings: dict[str, Any] = {}
 
         # Page-level embedding
         if context.all_text:
-            embeddings["page"] = self._model.encode(context.all_text[:1000])
+            embeddings["page"] = model.encode(context.all_text[:1000])
 
         # Region-level embeddings
         embeddings["regions"] = {}
@@ -224,7 +228,7 @@ class ContextEmbedder:
             elements = getattr(context.layout, region_name)
             region_text = " ".join(e.text or "" for e in elements).strip()
             if region_text:
-                embeddings["regions"][region_name] = self._model.encode(region_text)
+                embeddings["regions"][region_name] = model.encode(region_text)
 
         # Element-level embeddings
         embeddings["elements"] = []
@@ -232,7 +236,7 @@ class ContextEmbedder:
             elements = getattr(context.layout, region_name)
             for elem in elements:
                 if elem.text:
-                    elem_embedding = self._model.encode(elem.text)
+                    elem_embedding = model.encode(elem.text)
                     embeddings["elements"].append(
                         {
                             "embedding": elem_embedding,
@@ -263,12 +267,16 @@ class ContextEmbedder:
         self._ensure_loaded()
         import numpy as np
 
+        if self._model is None:
+            raise RuntimeError("Embedding model failed to load")
+        model = self._model
+
         embeddings = self.embed_context(context)
 
         if not embeddings.get("elements"):
             return []
 
-        query_embedding = self._model.encode(query)
+        query_embedding = model.encode(query)
 
         # Compute cosine similarities
         results = []
@@ -373,7 +381,7 @@ class LLMInterface:
         import os
 
         try:
-            import anthropic
+            import anthropic  # type: ignore[import-not-found]
 
             api_key = os.environ.get("ANTHROPIC_API_KEY")
             if not api_key:
@@ -394,7 +402,7 @@ class LLMInterface:
     def _call_local(self, prompt: str) -> str:
         """Call a local LLM via LangChain."""
         try:
-            from langchain_community.llms import Ollama
+            from langchain_community.llms import Ollama  # type: ignore[import-not-found]
 
             llm = Ollama(model=self.config.llm_model)
             return llm.invoke(prompt)

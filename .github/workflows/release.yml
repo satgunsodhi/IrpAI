@@ -1,0 +1,124 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'  # Trigger on version tags like v0.1.0, v1.2.3, etc.
+
+permissions:
+  contents: write  # Required for creating releases
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install build
+      
+      - name: Build all variants
+        run: python build_all.py
+      
+      - name: Extract version from tag
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+      
+      - name: Create Release Notes
+        id: release_notes
+        run: |
+          cat > release_notes.md << 'EOF'
+          ## IrpAI v${{ steps.get_version.outputs.VERSION }}
+          
+          ### 📦 Installation Options
+          
+          Choose the variant that best fits your needs:
+          
+          #### Core (Minimal Dependencies)
+          Basic functionality with OpenAI and PaddleOCR:
+          ```bash
+          pip install irpai-${{ steps.get_version.outputs.VERSION }}-py3-none-any.whl
+          ```
+          Or from the core directory asset.
+          
+          #### Full (All Runtime Dependencies)
+          Includes all optional runtime dependencies (Anthropic, LangChain, EasyOCR, Tesseract):
+          ```bash
+          # Download from full/ directory in assets
+          pip install path/to/irpai-${{ steps.get_version.outputs.VERSION }}-py3-none-any.whl
+          ```
+          
+          #### Dev (Full + Development Tools)
+          Full functionality plus testing and linting tools:
+          ```bash
+          # Download from dev/ directory in assets
+          pip install path/to/irpai-${{ steps.get_version.outputs.VERSION }}-py3-none-any.whl
+          ```
+          
+          ### 📋 Optional Extras
+          
+          Install core variant with specific extras:
+          ```bash
+          pip install 'irpai[llm]'      # Add Anthropic/LangChain support
+          pip install 'irpai[ocr]'      # Add EasyOCR/Tesseract support
+          pip install 'irpai[gpu]'      # Add GPU acceleration
+          pip install 'irpai[dev]'      # Add development tools
+          pip install 'irpai[llm,ocr]'  # Multiple extras
+          ```
+          
+          ### 📊 Variant Comparison
+          
+          | Variant | Dependencies | Use Case |
+          |---------|--------------|----------|
+          | **Core** | OpenAI, PaddleOCR | Minimal install, basic functionality |
+          | **Full** | Core + Anthropic, LangChain, EasyOCR, Tesseract | Production use with all features |
+          | **Dev** | Full + pytest, ruff, mypy | Development and testing |
+          
+          ### 📁 Assets
+          
+          This release includes 6 distribution files:
+          - `core/` - Core variant (wheel + source)
+          - `full/` - Full variant (wheel + source)
+          - `dev/` - Dev variant (wheel + source)
+          EOF
+      
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: Release v${{ steps.get_version.outputs.VERSION }}
+          body_path: release_notes.md
+          draft: false
+          prerelease: false
+          files: |
+            dist/core/irpai-*.whl
+            dist/core/irpai-*.tar.gz
+            dist/full/irpai-*.whl
+            dist/full/irpai-*.tar.gz
+            dist/dev/irpai-*.whl
+            dist/dev/irpai-*.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Build Summary
+        run: |
+          echo "## 🎉 Release Created Successfully!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Files Published:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Core Variant:**" >> $GITHUB_STEP_SUMMARY
+          ls -lh dist/core/ >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Full Variant:**" >> $GITHUB_STEP_SUMMARY
+          ls -lh dist/full/ >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Dev Variant:**" >> $GITHUB_STEP_SUMMARY
+          ls -lh dist/dev/ >> $GITHUB_STEP_SUMMARY

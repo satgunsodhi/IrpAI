@@ -178,19 +178,41 @@ class HeuristicUIDetector:
         return UIElementType.CONTAINER
 
     def _detect_text_regions(self, gray: np.ndarray, h: int, w: int) -> list[UIDetection]:
-        """Detect text-heavy regions using MSER (Maximally Stable Extremal Regions)."""
+        """Detect text-heavy regions using connected components analysis."""
         detections = []
 
-        mser = cv2.MSER_create()
-        mser.setMinArea(100)
-        mser.setMaxArea(int(h * w * 0.3))
+        # Apply threshold to get binary image
+        _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
 
-        regions, _ = mser.detectRegions(gray)
+        # Morphological operations to connect text components
+        kernel_horizontal = cv2.getStructuringElement(cv2.MORPH_RECT, (20, 1))
+        kernel_vertical = cv2.getStructuringElement(cv2.MORPH_RECT, (1, 10))
+        
+        # Dilate to connect nearby text
+        dilated = cv2.dilate(binary, kernel_horizontal, iterations=1)
+        dilated = cv2.dilate(dilated, kernel_vertical, iterations=1)
 
-        # Group nearby MSER regions into text blocks
+        # Find connected components
+        num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(
+            dilated, connectivity=8
+        )
+
+        # Extract bounding boxes from components
         bboxes = []
-        for region in regions:
-            x, y, bw, bh = cv2.boundingRect(region.reshape(-1, 1, 2))
+        min_area = 100
+        max_area = int(h * w * 0.3)
+
+        for i in range(1, num_labels):  # Skip background (label 0)
+            x, y, bw, bh, area = stats[i]
+            
+            if area < min_area or area > max_area:
+                continue
+            
+            # Filter by aspect ratio (text regions are typically wider than tall)
+            aspect_ratio = bw / max(bh, 1)
+            if aspect_ratio < 0.2 or aspect_ratio > 50:
+                continue
+            
             bboxes.append([x, y, x + bw, y + bh])
 
         if not bboxes:
@@ -320,7 +342,7 @@ class NeuralUIDetector:
             # Use COCO-pretrained model (transfer learning base)
             model = fasterrcnn_resnet50_fpn(weights=FasterRCNN_ResNet50_FPN_Weights.DEFAULT)
             # Replace the classifier head for UI detection
-            in_features = model.roi_heads.box_predictor.cls_score.in_features
+            in_features = model.roi_heads.box_predictor.cls_score.in_features  # type: ignore[union-attr]
             model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
             logger.info("Using COCO-pretrained Faster R-CNN (transfer learning base)")
 
@@ -350,7 +372,7 @@ class NeuralUIDetector:
 
         # Convert BGR to RGB and to tensor
         img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        img_tensor = self.transform(img_rgb).to(self.device)
+        img_tensor: torch.Tensor = self.transform(img_rgb).to(self.device)  # type: ignore[assignment]
 
         # Run inference
         with torch.no_grad():

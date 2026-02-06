@@ -1,0 +1,11 @@
+include README.md
+include LICENSE
+include pyproject.toml
+recursive-include src/irpai *.py
+recursive-include tests *.py
+exclude .venv
+exclude .git
+exclude *.pyc
+exclude __pycache__
+global-exclude *.py[cod]
+global-exclude __pycache__

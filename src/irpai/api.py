@@ -214,10 +214,8 @@ async def analyze_screenshot(request: AnalyzeRequest):
         stage_timings=result.stage_timings,
         confidence=result.confidence,
         warnings=result.warnings,
+        structured_context=ctx.model_dump() if request.return_structured_context else None,
     )
-
-    if request.return_structured_context:
-        response.structured_context = ctx.model_dump()
 
     return response
 
@@ -272,10 +270,8 @@ async def analyze_upload(
         stage_timings=result.stage_timings,
         confidence=result.confidence,
         warnings=result.warnings,
+        structured_context=ctx.model_dump() if return_structured_context else None,
     )
-
-    if return_structured_context:
-        response.structured_context = ctx.model_dump()
 
     return response
 

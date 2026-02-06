@@ -406,6 +406,8 @@ class IrpAIPipeline:
         # Load image
         if isinstance(image, (str, Path)):
             img = cv2.imread(str(image))
+            if img is None:
+                raise ValueError(f"Failed to load image from {image}")
         else:
             img = image.copy()
 

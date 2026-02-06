@@ -26,13 +26,34 @@ Screenshot (PNG/JPG)
 
 ## Installation
 
+### From Wheel (Recommended)
+
 ```bash
-# From source
-cd IrpAI
+# Install build tools
+pip install build
+
+# Build the wheel
+python -m build --wheel
+
+# Install the built wheel
+pip install dist/irpai-0.1.0-py3-none-any.whl
+```
+
+### Development (Editable)
+
+```bash
+# Modern editable install (PEP 660 wheel-based)
 pip install -e .
 
 # With dev dependencies
 pip install -e ".[dev]"
+```
+
+### Direct Installation
+
+```bash
+# Install from source directory
+pip install .
 ```
 
 ### Core Dependencies

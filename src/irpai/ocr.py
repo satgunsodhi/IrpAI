@@ -36,7 +36,7 @@ class PaddleOCREngine:
         """Lazy-load the OCR model."""
         if self._ocr is None:
             try:
-                from paddleocr import PaddleOCR
+                from paddleocr import PaddleOCR  # type: ignore[import-not-found]
 
                 self._ocr = PaddleOCR(
                     use_angle_cls=self.config.use_angle_cls,
@@ -62,7 +62,11 @@ class PaddleOCREngine:
         """
         self._ensure_loaded()
 
-        result = self._ocr.ocr(img, cls=self.config.use_angle_cls)
+        if self._ocr is None:
+            raise RuntimeError("PaddleOCR failed to load")
+        ocr = self._ocr
+
+        result = ocr.ocr(img, cls=self.config.use_angle_cls)
 
         if result is None or not result[0]:
             return []
@@ -116,7 +120,7 @@ class EasyOCREngine:
         """Lazy-load the OCR reader."""
         if self._reader is None:
             try:
-                import easyocr
+                import easyocr  # type: ignore[import-not-found]
 
                 lang_map = {"en": "en", "ch": "ch_sim", "ja": "ja", "ko": "ko"}
                 lang = lang_map.get(self.config.language, self.config.language)
@@ -129,18 +133,22 @@ class EasyOCREngine:
         """Extract text using EasyOCR."""
         self._ensure_loaded()
 
-        results = self._reader.readtext(img)
+        if self._reader is None:
+            raise RuntimeError("EasyOCR reader failed to load")
+        reader = self._reader
+
+        results = reader.readtext(img)
 
         extractions = []
         for bbox_points, text, confidence in results:
-            if confidence < self.config.confidence_threshold:
+            if float(confidence) < self.config.confidence_threshold:
                 continue
 
             if len(text.strip()) == 0:
                 continue
 
-            x_coords = [p[0] for p in bbox_points]
-            y_coords = [p[1] for p in bbox_points]
+            x_coords = [float(p[0]) for p in bbox_points]
+            y_coords = [float(p[1]) for p in bbox_points]
 
             extractions.append(
                 TextExtraction(
@@ -167,7 +175,7 @@ class TesseractEngine:
     def extract(self, img: np.ndarray) -> list[TextExtraction]:
         """Extract text using Tesseract."""
         try:
-            import pytesseract
+            import pytesseract  # type: ignore[import-not-found]
         except ImportError:
             raise ImportError(
                 "pytesseract not installed. Install with: pip install pytesseract"
@@ -186,7 +194,7 @@ class TesseractEngine:
             text = data["text"][i].strip()
             conf = int(data["conf"][i])
 
-            if conf < self.config.confidence_threshold * 100:
+            if float(conf) < self.config.confidence_threshold * 100:
                 continue
 
             if len(text) == 0:

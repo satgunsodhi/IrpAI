@@ -12,7 +12,7 @@ from pathlib import Path
 
 import cv2
 import numpy as np
-import pytest
+import pytest  # type: ignore[import-not-found]
 
 from irpai.config import PipelineConfig, PreprocessingConfig, FusionConfig
 from irpai.models import (
@@ -181,7 +181,8 @@ class TestBoundingBox:
     def test_iou_no_overlap(self):
         a = BoundingBox(x1=0, y1=0, x2=50, y2=50)
         b = BoundingBox(x1=100, y1=100, x2=200, y2=200)
-        assert bbox_iou := a.iou(b) == 0.0
+        bbox_iou = a.iou(b)
+        assert bbox_iou == 0.0
 
     def test_iou_partial_overlap(self):
         a = BoundingBox(x1=0, y1=0, x2=100, y2=100)
