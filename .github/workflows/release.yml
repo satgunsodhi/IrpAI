@@ -26,8 +26,26 @@ jobs:
           python -m pip install --upgrade pip
           pip install build
       
+      - name: Debug - Check files exist
+        run: |
+          echo "Current directory:"
+          pwd
+          echo ""
+          echo "Files in root:"
+          ls -la
+          echo ""
+          echo "Checking for build_all.py:"
+          test -f build_all.py && echo "✅ build_all.py exists" || echo "❌ build_all.py NOT found"
+          echo ""
+          echo "Checking for pyproject.toml:"
+          test -f pyproject.toml && echo "✅ pyproject.toml exists" || echo "❌ pyproject.toml NOT found"
+      
       - name: Build all variants
-        run: python build_all.py
+        run: |
+          python build_all.py
+          echo ""
+          echo "Build script completed, checking dist directory:"
+          ls -R dist/ || echo "No dist directory created"
       
       - name: Verify build artifacts
         run: |
