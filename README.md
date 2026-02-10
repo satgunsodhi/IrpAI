@@ -45,7 +45,7 @@ irpai screenshot.png --tier lite --format markdown -o context.md
 
 ```
 ┌──────────────────────────────────────────────────────────┐
-│                    Input Screenshot                       │
+│                    Input Screenshot                      │
 ├──────────────────────────────────────────────────────────┤
 │  Layer 1 │ PREPROCESSING                                 │
 │          │ Scale → Denoise → Sharpen → OCR-ready variant │
@@ -59,19 +59,19 @@ irpai screenshot.png --tier lite --format markdown -o context.md
 │          │ (fallback) → blocks, lines, words + positions │
 ├──────────────────────────────────────────────────────────┤
 │  Layer 4 │ LAYOUT ANALYSIS                               │
-│          │ Merge detection + OCR → semantic regions       │
+│          │ Merge detection + OCR → semantic regions      │
 │          │ Classify roles (heading/body/button/nav/…)    │
-│          │ Build hierarchy tree + reading order           │
+│          │ Build hierarchy tree + reading order          │
 ├──────────────────────────────────────────────────────────┤
 │  Layer 4b│ VLM CAPTIONING (full tier only)               │
 │          │ Florence-2-base scene captioning + OD + OCR   │
 ├──────────────────────────────────────────────────────────┤
 │  Layer 5 │ CONTEXT ASSEMBLY                              │
-│          │ → Structured JSON / Markdown / System prompt   │
-│          │ Token-budget enforcement, reading-order sort   │
+│          │ → Structured JSON / Markdown / System prompt  │
+│          │ Token-budget enforcement, reading-order sort  │
 ├──────────────────────────────────────────────────────────┤
 │  Optional│ RESEARCH HELPER                               │
-│          │ Web search from error messages / URLs / cues   │
+│          │ Web search from error messages / URLs / cues  │
 └──────────────────────────────────────────────────────────┘
 ```
 
