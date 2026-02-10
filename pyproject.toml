@@ -7,7 +7,7 @@ name = "irpai"
 version = "0.2.0"
 description = "Image Resolution Pipeline AI - Machine vision preprocessing for enhanced LLM-screenshot interactions"
 readme = "README.md"
-license = "MIT"
+license = {text = "MIT"}
 requires-python = ">=3.10"
 authors = [
     {name = "IrpAI Team"}
@@ -22,43 +22,62 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Topic :: Scientific/Engineering :: Image Recognition",
 ]
-dynamic = []
 
+# Core dependencies (minimal install)
 dependencies = [
     "opencv-python>=4.8.0",
     "numpy>=1.24.0",
     "Pillow>=10.0.0",
-    "paddleocr>=2.7.0",
-    "paddlepaddle>=2.5.0",
-    "torch>=2.1.0",
-    "torchvision>=0.16.0",
-    "sentence-transformers>=2.2.0",
-    "langchain>=0.1.0",
-    "langchain-openai>=0.0.5",
     "pydantic>=2.0.0",
     "typer>=0.9.0",
     "rich>=13.0.0",
+]
+
+[project.optional-dependencies]
+# Core ML dependencies
+core = [
+    "torch>=2.1.0",
+    "torchvision>=0.16.0",
+    "sentence-transformers>=2.2.0",
+]
+
+# Full installation (everything except dev)
+full = [
+    "irpai[core,ocr,llm]",
+    "paddleocr>=2.7.0",
+    "paddlepaddle>=2.5.0",
+    "langchain>=0.1.0",
+    "langchain-openai>=0.0.5",
     "fastapi>=0.104.0",
     "uvicorn>=0.24.0",
     "python-multipart>=0.0.6",
 ]
 
-[project.optional-dependencies]
+# Development tools
 dev = [
+    "irpai[full]",  # Dev includes everything
     "pytest>=7.4.0",
     "pytest-asyncio>=0.21.0",
     "pytest-cov>=4.1.0",
     "ruff>=0.1.0",
     "mypy>=1.7.0",
 ]
+
+# Optional integrations
 llm = [
+    "langchain>=0.1.0",
+    "langchain-openai>=0.0.5",
     "anthropic>=0.34.0",
     "langchain-community>=0.2.0",
 ]
+
 ocr = [
+    "paddleocr>=2.7.0",
+    "paddlepaddle>=2.5.0",
     "easyocr>=1.7.0",
     "pytesseract>=0.3.10",
 ]
+
 gpu = [
     "detectron2>=0.6",
 ]
@@ -75,6 +94,9 @@ where = ["src"]
 include = ["irpai*"]
 namespaces = false
 
+[tool.setuptools.package-data]
+irpai = ["py.typed"]
+
 [tool.ruff]
 line-length = 100
 target-version = "py310"
@@ -90,9 +112,3 @@ asyncio_mode = "auto"
 python_version = "3.10"
 warn_return_any = true
 warn_unused_configs = true
-
-[tool.setuptools.package-data]
-irpai = ["py.typed"]
-
-[options.bdist_wheel]
-universal = false
