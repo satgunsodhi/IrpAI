@@ -6,11 +6,11 @@
 # Install build tools
 pip install build
 
-# Build wheel (creates dist/irpai-0.1.0-py3-none-any.whl)
+# Build wheel (creates dist/irpai-0.2.0-py3-none-any.whl)
 python -m build --wheel
 
 # Install the wheel
-pip install dist/irpai-0.1.0-py3-none-any.whl
+pip install dist/irpai-0.2.0-py3-none-any.whl
 ```
 
 ## Development Installation (Editable)
@@ -27,8 +27,8 @@ pip install -e .
 python -m build
 
 # This creates:
-# - dist/irpai-0.1.0-py3-none-any.whl  (wheel)
-# - dist/irpai-0.1.0.tar.gz            (source)
+# - dist/irpai-0.2.0-py3-none-any.whl  (wheel)
+# - dist/irpai-0.2.0.tar.gz            (source)
 ```
 
 ## Advantages of Wheel Installation

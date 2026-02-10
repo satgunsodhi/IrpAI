@@ -36,7 +36,7 @@ pip install build
 python -m build --wheel
 
 # Install the built wheel
-pip install dist/irpai-0.1.0-py3-none-any.whl
+pip install dist/irpai-0.2.0-py3-none-any.whl
 ```
 
 ### Development (Editable)
