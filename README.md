@@ -1,255 +1,157 @@
-# IrpAI - Image Resolution Pipeline AI
+# IrpAI — Image Resolution Pipeline AI
 
-**Machine Vision Preprocessing for Enhanced LLM-Screenshot Interactions**
+> A lightweight machine vision pipeline that converts screenshots into structured context for LLMs, enabling faster and more relevant responses on everyday hardware.
 
-IrpAI is a lightweight machine vision preprocessing pipeline that extracts structured context from screenshots, enabling any text-based LLM to "understand" visual UI content without native vision capabilities.
+## Why IrpAI?
 
-## Problem
-
-Even advanced multimodal LLMs struggle with screenshots—users must manually describe UI layout, text content, and spatial relationships. IrpAI eliminates this friction by automatically converting screenshots into structured context.
-
-## Architecture
-
-```
-Screenshot (PNG/JPG)
-    ↓
-[Preprocessing] → Normalized image (orientation, contrast, denoising)
-    ↓
-[Vision Branch] → UI element bounding boxes + element types
-    ↓
-[Text Branch]   → OCR text strings + coordinates
-    ↓
-[Fusion Module] → Structured context JSON (layout, hierarchy, platform)
-    ↓
-[LLM Interface] → Enhanced prompt → LLM Response
-```
-
-## Installation
-
-### From Wheel (Recommended)
-
-```bash
-# Install build tools
-pip install build
-
-# Build the wheel
-python -m build --wheel
-
-# Install the built wheel
-pip install dist/irpai-0.2.0-py3-none-any.whl
-```
-
-### Development (Editable)
-
-```bash
-# Modern editable install (PEP 660 wheel-based)
-pip install -e .
-
-# With dev dependencies
-pip install -e ".[dev]"
-```
-
-### Direct Installation
-
-```bash
-# Install from source directory
-pip install .
-```
-
-### Core Dependencies
-
-| Component | Package | Purpose |
-|-----------|---------|---------|
-| Computer Vision | `opencv-python` | Image preprocessing |
-| Deep Learning | `torch`, `torchvision` | UI element detection (Faster R-CNN) |
-| OCR | `paddleocr`, `paddlepaddle` | Text extraction |
-| Embeddings | `sentence-transformers` | Semantic retrieval (optional) |
-| LLM Interface | `openai` / `anthropic` | LLM response generation |
-| CLI | `typer`, `rich` | Command-line interface |
-| API | `fastapi`, `uvicorn` | REST API server |
+Even strong LLMs often miss UI structure, key text, and spatial relationships when given a raw screenshot. IrpAI bridges that gap by automatically extracting structured context — text, layout, element types, reading order — and packaging it so the LLM can respond faster and more accurately, without extra user explanation.
 
 ## Quick Start
 
-### Python API
+```bash
+# Minimal install (CPU only, Tesseract OCR)
+pip install -e ".[ocr-tesseract]"
 
-```python
-from irpai.pipeline import IrpAIPipeline
+# Standard install (PaddleOCR + YOLO)
+pip install -e ".[ocr-paddle,detection]"
 
-# Initialize pipeline
-pipeline = IrpAIPipeline()
-
-# Analyze a screenshot with a query
-result = pipeline.analyze(
-    "screenshot.png",
-    query="What error is shown?",
-    use_llm=True  # Requires OPENAI_API_KEY
-)
-
-print(result.llm_response)
-print(result.structured_context.to_summary())
-print(f"Processed in {result.processing_time_ms:.0f}ms")
+# Full install (includes Florence-2 VLM)
+pip install -e ".[all]"
 ```
 
-### Extract Context Only (No LLM)
+### Basic usage
 
 ```python
-context = pipeline.extract_context("screenshot.png")
-print(context.platform)        # "web_browser"
-print(context.app_title)       # "GitHub - user/repo"
-print(context.all_text)        # All extracted text
-print(context.layout.navbar)   # Navbar elements
+from irpai import IrpAIPipeline, IrpAIConfig, Tier
+
+pipeline = IrpAIPipeline(IrpAIConfig(tier=Tier.STANDARD))
+pack = pipeline.run("screenshot.png")
+
+# JSON context for LLM injection
+print(pack.to_json())
+
+# Markdown format for chat
+print(pack.to_markdown())
 ```
 
 ### CLI
 
 ```bash
-# Analyze a single screenshot
-irpai analyze screenshot.png --query "What button should I click?"
-
-# Batch process a directory
-irpai batch screenshots/ --output results/
-
-# Interactive mode (multiple questions, one screenshot)
-irpai interactive screenshot.png
-
-# Generate default config
-irpai init-config --output my_config.json
-
-# Check system info
-irpai info
+irpai screenshot.png --tier standard --format json --pretty
+irpai screenshot.png --tier lite --format markdown -o context.md
 ```
 
-### REST API
+## Architecture
 
-```bash
-# Start the server
-uvicorn irpai.api:app --host 0.0.0.0 --port 8000
-
-# Or use Python
-python -m irpai.api
+```
+┌──────────────────────────────────────────────────────────┐
+│                    Input Screenshot                       │
+├──────────────────────────────────────────────────────────┤
+│  Layer 1 │ PREPROCESSING                                 │
+│          │ Scale → Denoise → Sharpen → OCR-ready variant │
+├──────────────────────────────────────────────────────────┤
+│  Layer 2 │ DETECTION                                     │
+│          │ YOLO26n UI element detection (buttons, menus, │
+│          │ headers, icons, text fields, nav bars …)      │
+├──────────────────────────────────────────────────────────┤
+│  Layer 3 │ OCR                                           │
+│          │ PaddleOCR PP-OCRv5 (primary) or Tesseract 5   │
+│          │ (fallback) → blocks, lines, words + positions │
+├──────────────────────────────────────────────────────────┤
+│  Layer 4 │ LAYOUT ANALYSIS                               │
+│          │ Merge detection + OCR → semantic regions       │
+│          │ Classify roles (heading/body/button/nav/…)    │
+│          │ Build hierarchy tree + reading order           │
+├──────────────────────────────────────────────────────────┤
+│  Layer 4b│ VLM CAPTIONING (full tier only)               │
+│          │ Florence-2-base scene captioning + OD + OCR   │
+├──────────────────────────────────────────────────────────┤
+│  Layer 5 │ CONTEXT ASSEMBLY                              │
+│          │ → Structured JSON / Markdown / System prompt   │
+│          │ Token-budget enforcement, reading-order sort   │
+├──────────────────────────────────────────────────────────┤
+│  Optional│ RESEARCH HELPER                               │
+│          │ Web search from error messages / URLs / cues   │
+└──────────────────────────────────────────────────────────┘
 ```
 
-```bash
-# Upload and analyze
-curl -X POST http://localhost:8000/api/v1/analyze/upload \
-  -F "file=@screenshot.png" \
-  -F "query=What error is shown?"
+## Tiers
 
-# JSON mode (base64 image)
-curl -X POST http://localhost:8000/api/v1/analyze \
-  -H "Content-Type: application/json" \
-  -d '{"image": "<base64>", "query": "Describe this screen"}'
+| Tier | Dependencies | Hardware | Speed | Accuracy |
+|------|-------------|----------|-------|----------|
+| **lite** | Tesseract | CPU, 4 GB RAM | ~100 ms | ★★☆☆ |
+| **standard** | PaddleOCR + YOLO | CPU, 8 GB RAM | ~300 ms | ★★★☆ |
+| **full** | + Florence-2 VLM | GPU 6 GB VRAM | ~800 ms | ★★★★ |
+
+## Output Example
+
+```json
+{
+  "summary": {
+    "description": "A VS Code editor showing a Python file with ...",
+    "app_type": "ide",
+    "key_elements": ["3× body", "2× heading", "1× button", "1× nav"]
+  },
+  "regions": [
+    {"role": "heading", "text": "main.py", "bbox": [10, 5, 200, 30]},
+    {"role": "nav", "text": "Explorer\nSearch\nExtensions", "bbox": [0, 40, 200, 600]},
+    {"role": "body", "text": "def main():\n    ...", "bbox": [210, 40, 800, 500]},
+    {"role": "button", "text": "Run", "bbox": [700, 5, 780, 30]}
+  ],
+  "hierarchy": {
+    "roots": [
+      {"role": "heading", "bbox": [10, 5, 200, 30], "text": "main.py"},
+      {"role": "nav", "bbox": [0, 40, 200, 600], "text": "..."}
+    ]
+  },
+  "meta": {
+    "tier": "standard",
+    "ocr_engine": "PaddleOCR",
+    "total_ms": 287.3
+  }
+}
 ```
-
-## Configuration
-
-```python
-from irpai.config import PipelineConfig
-
-config = PipelineConfig(
-    # Device selection
-    device="auto",  # "cpu", "gpu", "auto"
-    
-    # Preprocessing
-    preprocessing={"max_dimension": 1920, "enable_denoising": True},
-    
-    # Vision (UI Detection)
-    vision={"confidence_threshold": 0.5, "use_quantized": False},
-    
-    # OCR
-    ocr={"engine": "paddleocr", "language": "en", "use_selective_ocr": True},
-    
-    # Fusion
-    fusion={"enable_platform_detection": True, "enable_spatial_relationships": True},
-    
-    # LLM
-    llm={
-        "approach": "direct_injection",  # or "embedding_retrieval"
-        "llm_provider": "openai",        # or "anthropic", "local"
-        "llm_model": "gpt-4",
-        "enable_pii_redaction": True,
-    },
-    
-    # Pipeline
-    enable_caching=True,
-    enable_async=True,
-    verbose=False,
-)
-```
-
-## Pipeline Stages
-
-### 1. Preprocessing
-- Orientation detection & correction
-- Resolution normalization (max 1920px)
-- Bilateral filter denoising
-- CLAHE contrast enhancement
-
-### 2. Vision Branch (UI Detection)
-- **Neural**: Faster R-CNN with FPN (ResNet-50 backbone)
-- **Heuristic**: Contour analysis fallback for CPU-only environments
-- Detects: buttons, text inputs, text blocks, images, menus, modals, containers, icons
-
-### 3. Text Branch (OCR)
-- **Primary**: PaddleOCR (97%+ accuracy, 30MB model)
-- **Fallback**: EasyOCR, Tesseract
-- Selective OCR: Uses UI detections as region proposals (3-5x faster)
-- Ensemble mode: Multi-OCR voting for maximum accuracy
-- PII redaction: Automatic detection and masking of sensitive data
-
-### 4. Fusion Module
-- Spatial-text alignment (assigns text to UI elements)
-- Layout region detection (navbar, sidebar, main content, footer, modal)
-- Platform & application detection
-- Spatial relationship inference
-- Context-aware post-processing
-
-### 5. LLM Interface
-- **Direct Injection**: Full context serialized into natural language prompt
-- **Embedding Retrieval**: Semantic search for query-relevant UI elements
-- Supports: OpenAI, Anthropic, local models (via Ollama/LangChain)
-
-## Performance Targets
-
-| Metric | MVP Target | Production Target |
-|--------|-----------|------------------|
-| End-to-End Accuracy | >70% | >85% |
-| Latency (CPU) | <5s | <3s |
-| Latency (GPU) | <2s | <1s |
-| Memory Usage | <2GB | <1GB |
-| OCR Accuracy | >90% | >95% |
-| UI Detection mAP@0.5 | >0.60 | >0.68 |
 
 ## Project Structure
 
 ```
-IrpAI/
-├── src/irpai/
-│   ├── __init__.py          # Package metadata
-│   ├── config.py            # Pydantic configuration models
-│   ├── models.py            # Data models (BoundingBox, UIDetection, etc.)
-│   ├── preprocessing.py     # Stage 1: Image normalization
-│   ├── vision.py            # Stage 2: UI element detection
-│   ├── ocr.py               # Stage 3: Text extraction
-│   ├── fusion.py            # Stage 4: Context structuring
-│   ├── llm_interface.py     # Stage 5: LLM prompt building
-│   ├── pipeline.py          # Pipeline orchestrator
-│   ├── cli.py               # CLI (Typer)
-│   └── api.py               # REST API (FastAPI)
-├── tests/
-│   └── test_pipeline.py     # Test suite
-├── pyproject.toml            # Project config & dependencies
-└── README.md
+irpai/
+├── __init__.py              # Package entry point
+├── config.py                # Tiered configuration system
+├── pipeline.py              # Main orchestrator
+├── cli.py                   # Command-line interface
+├── preprocessing/
+│   └── normalizer.py        # Image scaling, denoising, sharpening
+├── detection/
+│   ├── base.py              # Abstract detector interface
+│   └── yolo_detector.py     # YOLO + grid fallback
+├── ocr/
+│   ├── base.py              # Abstract OCR interface
+│   ├── paddle_ocr.py        # PaddleOCR backend
+│   ├── tesseract_ocr.py     # Tesseract backend
+│   └── engine.py            # Factory with auto-fallback
+├── layout/
+│   ├── analyzer.py          # Region grouping + role classification
+│   └── hierarchy.py         # Spatial containment tree builder
+├── vlm/
+│   ├── base.py              # Abstract VLM interface
+│   └── florence.py           # Florence-2 integration
+├── context/
+│   ├── schema.py            # ContextPack / Region / Summary types
+│   ├── assembler.py         # Merges layers → structured output
+│   └── formatter.py         # JSON / Markdown / system-prompt output
+├── research/
+│   └── helper.py            # Web search from screenshot cues
+└── utils/
+    ├── image.py             # Shared image operations
+    └── logging.py           # Logger setup
 ```
 
-## Testing
+## Running Tests
 
 ```bash
-# Run all tests
-pytest tests/ -v
-
-# Run with coverage
-pytest tests/ --cov=irpai --cov-report=html
+pip install -e ".[dev]"
+pytest
 ```
 
 ## License
