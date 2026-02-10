@@ -1,215 +1,278 @@
 """
-IrpAI Configuration Module
+IrpAI Configuration
 
-Manages all pipeline configuration including model paths, thresholds,
-and processing parameters. Uses Pydantic for validation.
+Defines the tiered execution model and all configurable parameters
+for each pipeline layer.
+
+Tiers
+-----
+- **lite**     : CPU-only, Tesseract OCR, rule-based layout.  Minimal deps.
+- **standard** : CPU, PaddleOCR PP-OCRv5, YOLO26n (ONNX), layout analysis.
+- **full**     : GPU, PaddleOCR + YOLO + Florence-2 VLM for scene captioning.
 """
 
 from __future__ import annotations
 
-import os
-from enum import Enum
+import enum
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional
-
-from pydantic import BaseModel, Field
+from typing import Literal
 
 
-class DeviceType(str, Enum):
-    CPU = "cpu"
-    GPU = "gpu"
-    AUTO = "auto"
+class Tier(str, enum.Enum):
+    """Execution tier — controls which models/backends are loaded."""
+
+    LITE = "lite"
+    STANDARD = "standard"
+    FULL = "full"
 
 
-class Platform(str, Enum):
-    WINDOWS = "windows"
-    MAC = "mac"
-    WEB_BROWSER = "web_browser"
-    MOBILE = "mobile"
-    UNKNOWN = "unknown"
+# ---------------------------------------------------------------------------
+# Per-layer configs
+# ---------------------------------------------------------------------------
+
+@dataclass(frozen=True)
+class PreprocessingConfig:
+    """Image preprocessing settings."""
+
+    target_max_dimension: int = 1920
+    """Scale images so the longest side does not exceed this value."""
+
+    denoise_strength: int = 3
+    """Non-local means denoising strength (0 = disabled)."""
+
+    adaptive_threshold: bool = False
+    """Apply adaptive threshold for very low-contrast screenshots."""
+
+    grayscale_ocr: bool = True
+    """Convert to grayscale before OCR pass (improves speed & accuracy)."""
+
+    sharpen: bool = True
+    """Apply mild unsharp-mask sharpening after resize."""
 
 
-class PreprocessingConfig(BaseModel):
-    """Configuration for the preprocessing stage."""
+@dataclass(frozen=True)
+class DetectionConfig:
+    """UI element detection settings."""
 
-    max_dimension: int = Field(default=1920, description="Max image dimension in pixels")
-    bilateral_d: int = Field(default=9, description="Bilateral filter diameter")
-    bilateral_sigma_color: float = Field(default=75.0, description="Bilateral filter sigma color")
-    bilateral_sigma_space: float = Field(default=75.0, description="Bilateral filter sigma space")
-    clahe_clip_limit: float = Field(default=2.0, description="CLAHE clip limit")
-    clahe_tile_grid_size: tuple[int, int] = Field(
-        default=(8, 8), description="CLAHE tile grid size"
+    model_name: str = "yolo26n"
+    """YOLO model variant — n(ano)/s(mall)/m(edium)/l(arge)/x."""
+
+    weights_path: Path | None = None
+    """Path to custom fine-tuned weights.  None = download default."""
+
+    confidence_threshold: float = 0.35
+    """Minimum confidence to keep a detection."""
+
+    iou_threshold: float = 0.45
+    """IoU threshold for NMS."""
+
+    device: str = "cpu"
+    """'cpu', 'cuda', 'cuda:0', 'mps', etc."""
+
+    ui_classes: tuple[str, ...] = (
+        "button",
+        "text_field",
+        "icon",
+        "image",
+        "menu",
+        "header",
+        "toolbar",
+        "sidebar",
+        "tab",
+        "dropdown",
+        "checkbox",
+        "radio",
+        "slider",
+        "card",
+        "modal",
+        "tooltip",
+        "nav_bar",
+        "status_bar",
+        "content_area",
     )
-    enable_denoising: bool = Field(default=True, description="Enable bilateral denoising")
-    enable_contrast_enhancement: bool = Field(default=True, description="Enable CLAHE")
-    enable_orientation_correction: bool = Field(
-        default=True, description="Enable orientation detection/correction"
-    )
+    """Target UI element classes (used when fine-tuning or mapping)."""
 
 
-class VisionConfig(BaseModel):
-    """Configuration for the vision branch (UI element detection)."""
+@dataclass(frozen=True)
+class OCRConfig:
+    """OCR engine settings."""
 
-    model_name: str = Field(
-        default="fasterrcnn_resnet50_fpn", description="Detection model architecture"
-    )
-    confidence_threshold: float = Field(
-        default=0.5, description="Minimum detection confidence"
-    )
-    nms_threshold: float = Field(default=0.3, description="Non-maximum suppression IoU threshold")
-    max_detections: int = Field(default=100, description="Maximum detections per image")
-    use_quantized: bool = Field(default=False, description="Use INT8 quantized model")
-    custom_model_path: Optional[str] = Field(
-        default=None, description="Path to custom-trained detection model"
-    )
-    detection_classes: list[str] = Field(
-        default=[
-            "button",
-            "text_input",
-            "text_block",
-            "image",
-            "menu",
-            "modal",
-            "container",
-            "icon",
-            "checkbox",
-            "dropdown",
-            "tab",
-            "link",
-        ],
-        description="UI element classes to detect",
-    )
-    anchor_scales: list[int] = Field(
-        default=[32, 64, 128, 256, 512], description="Anchor scales for RPN"
-    )
-    anchor_aspect_ratios: list[float] = Field(
-        default=[0.5, 1.0, 2.0], description="Anchor aspect ratios"
-    )
+    engine: Literal["paddleocr", "tesseract"] = "paddleocr"
+    """Primary OCR backend."""
+
+    fallback_engine: Literal["tesseract", "none"] = "tesseract"
+    """Fallback if primary fails or is unavailable."""
+
+    language: str = "en"
+    """Language code(s) for OCR.  PaddleOCR uses 'en', Tesseract uses 'eng'."""
+
+    use_gpu: bool = False
+    """Use GPU acceleration for OCR (PaddleOCR only)."""
+
+    det_db_thresh: float = 0.3
+    """PaddleOCR text detection threshold."""
+
+    rec_batch_num: int = 6
+    """PaddleOCR recognition batch size."""
+
+    paragraph_merge: bool = True
+    """Attempt to merge lines into paragraphs by proximity."""
 
 
-class OCRConfig(BaseModel):
-    """Configuration for the text branch (OCR engine)."""
+@dataclass(frozen=True)
+class LayoutConfig:
+    """Layout analysis settings."""
 
-    engine: str = Field(default="paddleocr", description="OCR engine: paddleocr, easyocr, tesseract")
-    language: str = Field(default="en", description="Primary OCR language")
-    confidence_threshold: float = Field(
-        default=0.6, description="Minimum OCR confidence threshold"
-    )
-    use_angle_cls: bool = Field(default=True, description="Enable text orientation classification")
-    use_selective_ocr: bool = Field(
-        default=True, description="Only OCR text-containing UI regions"
-    )
-    enable_ensemble: bool = Field(
-        default=False, description="Use multi-OCR ensemble (slower, more accurate)"
-    )
-    max_text_length: int = Field(default=500, description="Maximum text length per region")
+    merge_distance_x: int = 20
+    """Max horizontal pixel gap to merge adjacent text blocks."""
 
+    merge_distance_y: int = 12
+    """Max vertical pixel gap to merge text lines into a group."""
 
-class FusionConfig(BaseModel):
-    """Configuration for the fusion and structuring module."""
+    min_region_area: int = 400
+    """Discard detected regions smaller than this (px²)."""
 
-    navbar_threshold: float = Field(
-        default=0.10, description="Top % of screen considered navbar"
-    )
-    footer_threshold: float = Field(
-        default=0.90, description="Bottom % of screen considered footer"
-    )
-    sidebar_threshold: float = Field(
-        default=0.20, description="Side % of screen considered sidebar"
-    )
-    min_containment_overlap: float = Field(
-        default=0.5, description="Minimum IoU for text-UI containment"
-    )
-    enable_platform_detection: bool = Field(
-        default=True, description="Detect platform/application type"
-    )
-    enable_spatial_relationships: bool = Field(
-        default=True, description="Compute spatial relationships between elements"
-    )
-    max_spatial_relationships: int = Field(
-        default=50, description="Maximum spatial relationships to compute"
-    )
+    heading_font_ratio: float = 1.4
+    """Text ≥ this × median font size is classified as a heading."""
+
+    column_detection: bool = True
+    """Attempt to detect multi-column layouts."""
+
+    reading_order: Literal["ltr-ttb", "rtl-ttb"] = "ltr-ttb"
+    """Assumed reading order — left-to-right top-to-bottom, or RTL."""
 
 
-class LLMConfig(BaseModel):
-    """Configuration for the LLM interface."""
+@dataclass(frozen=True)
+class VLMConfig:
+    """Vision-Language Model settings (GPU tier only)."""
 
-    approach: str = Field(
-        default="direct_injection",
-        description="LLM integration approach: direct_injection or embedding_retrieval",
+    model_name: str = "microsoft/Florence-2-base"
+    """HuggingFace model identifier."""
+
+    device: str = "cuda"
+    """Device for VLM inference."""
+
+    dtype: str = "float16"
+    """Weight precision — 'float16', 'bfloat16', 'float32'."""
+
+    max_new_tokens: int = 512
+    """Maximum tokens to generate in captioning."""
+
+    tasks: tuple[str, ...] = (
+        "<OD>",
+        "<OCR_WITH_REGION>",
+        "<CAPTION>",
+        "<DETAILED_CAPTION>",
     )
-    max_context_tokens: int = Field(
-        default=2000, description="Maximum context tokens for LLM prompt"
-    )
-    max_elements_per_region: int = Field(
-        default=10, description="Max UI elements to include per layout region"
-    )
-    embedding_model: str = Field(
-        default="all-MiniLM-L6-v2", description="Sentence embedding model"
-    )
-    embedding_top_k: int = Field(
-        default=5, description="Top-K elements for embedding retrieval"
-    )
-    llm_provider: str = Field(
-        default="openai", description="LLM provider: openai, local, anthropic"
-    )
-    llm_model: str = Field(default="gpt-4", description="LLM model name")
-    api_key_env_var: str = Field(
-        default="OPENAI_API_KEY", description="Environment variable for API key"
-    )
-    temperature: float = Field(default=0.3, description="LLM temperature")
-    enable_pii_redaction: bool = Field(
-        default=True, description="Redact PII from context before sending to LLM"
-    )
+    """Florence-2 task prompts to run."""
 
 
-class PipelineConfig(BaseModel):
-    """Master configuration for the entire IrpAI pipeline."""
+@dataclass(frozen=True)
+class ResearchConfig:
+    """Optional research-helper settings."""
 
-    device: DeviceType = Field(default=DeviceType.AUTO, description="Compute device")
-    preprocessing: PreprocessingConfig = Field(default_factory=PreprocessingConfig)
-    vision: VisionConfig = Field(default_factory=VisionConfig)
-    ocr: OCRConfig = Field(default_factory=OCRConfig)
-    fusion: FusionConfig = Field(default_factory=FusionConfig)
-    llm: LLMConfig = Field(default_factory=LLMConfig)
+    enabled: bool = False
+    """Whether to run the research helper."""
 
-    # Pipeline-level settings
-    enable_caching: bool = Field(default=True, description="Cache processed screenshots")
-    cache_max_size: int = Field(default=100, description="Maximum cached screenshots")
-    enable_async: bool = Field(default=True, description="Run vision/text branches in parallel")
-    verbose: bool = Field(default=False, description="Verbose logging")
-    output_dir: Optional[str] = Field(
-        default=None, description="Directory for output files"
-    )
+    search_provider: Literal["duckduckgo", "serper", "none"] = "duckduckgo"
+    """Web search backend."""
 
-    @property
-    def resolved_device(self) -> str:
-        if self.device == DeviceType.AUTO:
-            try:
-                import torch
-                return "cuda" if torch.cuda.is_available() else "cpu"
-            except ImportError:
-                return "cpu"
-        return self.device.value
+    max_results: int = 3
+    """Max search results to fetch per query."""
 
-    @classmethod
-    def from_file(cls, path: str | Path) -> PipelineConfig:
-        """Load config from JSON file."""
-        import json
+    timeout_seconds: float = 5.0
+    """Per-request timeout."""
 
-        with open(path) as f:
-            data = json.load(f)
-        return cls(**data)
-
-    def to_file(self, path: str | Path) -> None:
-        """Save config to JSON file."""
-        import json
-
-        path = Path(path)
-        path.parent.mkdir(parents=True, exist_ok=True)
-        with open(path, "w") as f:
-            json.dump(self.model_dump(), f, indent=2)
+    api_key: str | None = None
+    """API key (Serper only)."""
 
 
-# Default configuration instance
-DEFAULT_CONFIG = PipelineConfig()
+@dataclass(frozen=True)
+class OutputConfig:
+    """Context-pack output format settings."""
+
+    format: Literal["json", "markdown", "yaml"] = "json"
+    """Primary output format."""
+
+    include_bboxes: bool = True
+    """Include bounding-box coordinates in output."""
+
+    include_confidence: bool = True
+    """Include model confidence scores."""
+
+    include_hierarchy: bool = True
+    """Include parent→child layout hierarchy."""
+
+    include_summary: bool = True
+    """Generate a one-paragraph natural-language summary."""
+
+    max_context_tokens: int = 4096
+    """Soft limit — truncate/summarize to fit this token budget."""
+
+    compact: bool = True
+    """Minify JSON / strip extra whitespace for token efficiency."""
+
+
+# ---------------------------------------------------------------------------
+# Master config
+# ---------------------------------------------------------------------------
+
+@dataclass
+class IrpAIConfig:
+    """
+    Master configuration for the IrpAI pipeline.
+
+    Pass ``tier`` to auto-configure sensible defaults, then override
+    individual layer configs as needed.
+    """
+
+    tier: Tier = Tier.STANDARD
+
+    preprocessing: PreprocessingConfig = field(default_factory=PreprocessingConfig)
+    detection: DetectionConfig = field(default_factory=DetectionConfig)
+    ocr: OCRConfig = field(default_factory=OCRConfig)
+    layout: LayoutConfig = field(default_factory=LayoutConfig)
+    vlm: VLMConfig = field(default_factory=VLMConfig)
+    research: ResearchConfig = field(default_factory=ResearchConfig)
+    output: OutputConfig = field(default_factory=OutputConfig)
+
+    cache_dir: Path = field(default_factory=lambda: Path.home() / ".cache" / "irpai")
+    """Directory for downloaded model weights and cached results."""
+
+    verbose: bool = False
+    """Enable verbose / debug logging."""
+
+    def __post_init__(self) -> None:
+        self.cache_dir.mkdir(parents=True, exist_ok=True)
+        self._apply_tier_defaults()
+
+    def _apply_tier_defaults(self) -> None:
+        """Override sub-configs to match the selected tier."""
+        if self.tier == Tier.LITE:
+            object.__setattr__(self, "ocr", OCRConfig(
+                engine="tesseract",
+                fallback_engine="none",
+                use_gpu=False,
+            ))
+            object.__setattr__(self, "detection", DetectionConfig(device="cpu"))
+            object.__setattr__(self, "vlm", VLMConfig(device="cpu"))
+            object.__setattr__(self, "research", ResearchConfig(enabled=False))
+
+        elif self.tier == Tier.STANDARD:
+            object.__setattr__(self, "ocr", OCRConfig(
+                engine="paddleocr",
+                fallback_engine="tesseract",
+                use_gpu=False,
+            ))
+            object.__setattr__(self, "detection", DetectionConfig(device="cpu"))
+            object.__setattr__(self, "research", ResearchConfig(enabled=False))
+
+        elif self.tier == Tier.FULL:
+            object.__setattr__(self, "ocr", OCRConfig(
+                engine="paddleocr",
+                fallback_engine="tesseract",
+                use_gpu=True,
+            ))
+            object.__setattr__(self, "detection", DetectionConfig(device="cuda"))
+            object.__setattr__(self, "vlm", VLMConfig(device="cuda"))
