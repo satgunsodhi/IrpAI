@@ -13,22 +13,22 @@ First, update the version in `pyproject.toml`:
 ```toml
 [project]
 name = "irpai"
-version = "0.2.0"  # Update this
+version = "0.1.0"
 ```
 
 ### 2. Commit Changes
 
 ```bash
 git add pyproject.toml
-git commit -m "Bump version to 0.2.0"
+git commit -m "Bump version to 0.1.0"
 git push
 ```
 
 ### 3. Create and Push Version Tag
 
 ```bash
-git tag v0.2.0
-git push origin v0.2.0
+git tag v0.1.0
+git push origin v0.1.0
 ```
 
 **That's it!** GitHub Actions will automatically:
@@ -72,7 +72,7 @@ If you need to create a release manually:
 python build_all.py
 
 # 2. Go to GitHub > Releases > Draft a new release
-# 3. Choose a tag (or create new tag like v0.2.0)
+# 3. Choose a tag (or create new tag like v0.1.0)
 # 4. Upload files from:
 #    - dist/core/
 #    - dist/full/
@@ -105,5 +105,5 @@ Follow [Semantic Versioning](https://semver.org/):
 Examples:
 - `v0.1.0` - Initial release
 - `v0.1.1` - Bug fix
-- `v0.2.0` - New feature
+- `v0.1.2` - Another bug fix
 - `v1.0.0` - First stable release
