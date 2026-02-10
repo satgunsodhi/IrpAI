@@ -65,17 +65,12 @@ jobs:
           pip install irpai-${{ steps.get_version.outputs.VERSION }}-py3-none-any.whl
           ```
           
-          #### With ML Features
+          #### With All Features
           ```bash
-          pip install irpai-${{ steps.get_version.outputs.VERSION }}-py3-none-any.whl[core]
+          pip install irpai-${{ steps.get_version.outputs.VERSION }}-py3-none-any.whl[all]
           ```
           
-          #### Full (All runtime dependencies)
-          ```bash
-          pip install irpai-${{ steps.get_version.outputs.VERSION }}-py3-none-any.whl[full]
-          ```
-          
-          #### Development (Full + dev tools)
+          #### Development (All + dev tools)
           ```bash
           pip install irpai-${{ steps.get_version.outputs.VERSION }}-py3-none-any.whl[dev]
           ```
@@ -83,18 +78,19 @@ jobs:
           ### 📋 Available Extras
           
           ```bash
-          pip install irpai[core]       # Basic ML (torch, transformers)
-          pip install irpai[ocr]        # OCR engines
-          pip install irpai[llm]        # LLM providers
-          pip install irpai[gpu]        # GPU acceleration
-          pip install irpai[full]       # All runtime features
-          pip install irpai[dev]        # Development tools
+          pip install irpai[ocr-paddle]      # PaddleOCR engine
+          pip install irpai[ocr-tesseract]   # Tesseract OCR engine
+          pip install irpai[detection]       # YOLO object detection
+          pip install irpai[vlm]             # Vision-Language Models (Florence-2)
+          pip install irpai[research]        # Web research tools
+          pip install irpai[all]             # All runtime features
+          pip install irpai[dev]             # Development tools
           ```
           
           Combine multiple extras:
           ```bash
-          pip install irpai[ocr,llm]
-          pip install irpai[full,gpu]
+          pip install irpai[ocr-paddle,detection]
+          pip install irpai[all,dev]
           ```
           
           ### 📊 Installation Options
@@ -102,9 +98,11 @@ jobs:
           | Install Command | Includes | Use Case |
           |----------------|----------|----------|
           | `pip install irpai` | OpenCV, NumPy, Pillow | Minimal |
-          | `pip install irpai[core]` | + ML features | Standard use |
-          | `pip install irpai[full]` | All runtime deps | Production |
-          | `pip install irpai[dev]` | Full + dev tools | Development |
+          | `pip install irpai[ocr-paddle]` | + PaddleOCR | OCR with PaddlePaddle |
+          | `pip install irpai[detection]` | + YOLO | UI element detection |
+          | `pip install irpai[vlm]` | + PyTorch, Transformers | Vision-Language Models |
+          | `pip install irpai[all]` | All runtime deps | Production |
+          | `pip install irpai[dev]` | All + dev tools | Development |
           EOF
       
       - name: Create GitHub Release
@@ -131,6 +129,8 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Installation Options:" >> $GITHUB_STEP_SUMMARY
           echo "- \`pip install irpai\` - Minimal" >> $GITHUB_STEP_SUMMARY
-          echo "- \`pip install irpai[core]\` - ML features" >> $GITHUB_STEP_SUMMARY
-          echo "- \`pip install irpai[full]\` - All features" >> $GITHUB_STEP_SUMMARY
+          echo "- \`pip install irpai[ocr-paddle]\` - PaddleOCR" >> $GITHUB_STEP_SUMMARY
+          echo "- \`pip install irpai[detection]\` - YOLO detection" >> $GITHUB_STEP_SUMMARY
+          echo "- \`pip install irpai[vlm]\` - Vision-Language Models" >> $GITHUB_STEP_SUMMARY
+          echo "- \`pip install irpai[all]\` - All features" >> $GITHUB_STEP_SUMMARY
           echo "- \`pip install irpai[dev]\` - Development" >> $GITHUB_STEP_SUMMARY
