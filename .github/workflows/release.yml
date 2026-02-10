@@ -3,10 +3,10 @@ name: Build and Release
 on:
   push:
     tags:
-      - 'v*'  # Trigger on version tags like v0.1.0, v1.2.3, etc.
+      - 'v*'
 
 permissions:
-  contents: write  # Required for creating releases
+  contents: write
 
 jobs:
   build-and-release:
@@ -26,120 +26,86 @@ jobs:
           python -m pip install --upgrade pip
           pip install build
       
-      - name: Debug - Check files exist
+      - name: Build package
         run: |
-          echo "Current directory:"
-          pwd
+          python -m build
           echo ""
-          echo "Files in root:"
-          ls -la
-          echo ""
-          echo "Checking for build_all.py:"
-          test -f build_all.py && echo "✅ build_all.py exists" || echo "❌ build_all.py NOT found"
-          echo ""
-          echo "Checking for pyproject.toml:"
-          test -f pyproject.toml && echo "✅ pyproject.toml exists" || echo "❌ pyproject.toml NOT found"
-      
-      - name: Build all variants
-        run: |
-          python build_all.py
-          echo ""
-          echo "Build script completed, checking dist directory:"
-          ls -R dist/ || echo "No dist directory created"
+          echo "✅ Build completed, checking dist directory:"
+          ls -lh dist/
       
       - name: Verify build artifacts
         run: |
-          echo "📦 Checking built files..."
-          ls -R dist/
-          echo ""
-          echo "Core files:"
-          ls -lh dist/core/
-          echo ""
-          echo "Full files:"
-          ls -lh dist/full/
-          echo ""
-          echo "Dev files:"
-          ls -lh dist/dev/
+          echo "📦 Built files:"
+          ls -lh dist/
+          
+          # Count wheel files
+          wheel_count=$(ls -1 dist/*.whl 2>/dev/null | wc -l)
+          if [ "$wheel_count" -eq 0 ]; then
+            echo "❌ No wheel file found!"
+            exit 1
+          fi
+          
+          echo "✅ Found $wheel_count wheel file(s)"
       
       - name: Extract version from tag
         id: get_version
         run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
       
       - name: Create Release Notes
-        id: release_notes
         run: |
           cat > release_notes.md << 'EOF'
           ## IrpAI v${{ steps.get_version.outputs.VERSION }}
           
-          ### 📦 Installation Options
+          ### 📦 Installation
           
-          Choose the variant that best fits your needs:
+          Download the wheel file and install with your preferred extras:
           
-          #### Core (Minimal Dependencies)
-          Basic functionality with OpenAI and PaddleOCR:
+          #### Minimal (Core dependencies only)
           ```bash
           pip install irpai-${{ steps.get_version.outputs.VERSION }}-py3-none-any.whl
           ```
-          Or from the core directory asset.
           
-          #### Full (All Runtime Dependencies)
-          Includes all optional runtime dependencies (Anthropic, LangChain, EasyOCR, Tesseract):
+          #### With ML Features
           ```bash
-          # Download from full/ directory in assets
-          pip install path/to/irpai-${{ steps.get_version.outputs.VERSION }}-py3-none-any.whl
+          pip install irpai-${{ steps.get_version.outputs.VERSION }}-py3-none-any.whl[core]
           ```
           
-          #### Dev (Full + Development Tools)
-          Full functionality plus testing and linting tools:
+          #### Full (All runtime dependencies)
           ```bash
-          # Download from dev/ directory in assets
-          pip install path/to/irpai-${{ steps.get_version.outputs.VERSION }}-py3-none-any.whl
+          pip install irpai-${{ steps.get_version.outputs.VERSION }}-py3-none-any.whl[full]
           ```
           
-          ### 📋 Optional Extras
-          
-          Install core variant with specific extras:
+          #### Development (Full + dev tools)
           ```bash
-          pip install 'irpai[llm]'      # Add Anthropic/LangChain support
-          pip install 'irpai[ocr]'      # Add EasyOCR/Tesseract support
-          pip install 'irpai[gpu]'      # Add GPU acceleration
-          pip install 'irpai[dev]'      # Add development tools
-          pip install 'irpai[llm,ocr]'  # Multiple extras
+          pip install irpai-${{ steps.get_version.outputs.VERSION }}-py3-none-any.whl[dev]
           ```
           
-          ### 📊 Variant Comparison
+          ### 📋 Available Extras
           
-          | Variant | Dependencies | Use Case |
-          |---------|--------------|----------|
-          | **Core** | OpenAI, PaddleOCR | Minimal install, basic functionality |
-          | **Full** | Core + Anthropic, LangChain, EasyOCR, Tesseract | Production use with all features |
-          | **Dev** | Full + pytest, ruff, mypy | Development and testing |
+          ```bash
+          pip install irpai[core]       # Basic ML (torch, transformers)
+          pip install irpai[ocr]        # OCR engines
+          pip install irpai[llm]        # LLM providers
+          pip install irpai[gpu]        # GPU acceleration
+          pip install irpai[full]       # All runtime features
+          pip install irpai[dev]        # Development tools
+          ```
           
-          ### 📁 Assets
+          Combine multiple extras:
+          ```bash
+          pip install irpai[ocr,llm]
+          pip install irpai[full,gpu]
+          ```
           
-          This release includes 6 distribution files:
-          - `core/` - Core variant (wheel + source)
-          - `full/` - Full variant (wheel + source)
-          - `dev/` - Dev variant (wheel + source)
+          ### 📊 Installation Options
+          
+          | Install Command | Includes | Use Case |
+          |----------------|----------|----------|
+          | `pip install irpai` | OpenCV, NumPy, Pillow | Minimal |
+          | `pip install irpai[core]` | + ML features | Standard use |
+          | `pip install irpai[full]` | All runtime deps | Production |
+          | `pip install irpai[dev]` | Full + dev tools | Development |
           EOF
-      
-      - name: Prepare release assets
-        run: |
-          # Create a releases directory with properly named files
-          mkdir -p releases
-          
-          # Copy and rename files with variant prefix for clarity
-          cp dist/core/*.whl releases/irpai-${{ steps.get_version.outputs.VERSION }}-core-py3-none-any.whl || true
-          cp dist/core/*.tar.gz releases/irpai-${{ steps.get_version.outputs.VERSION }}-core.tar.gz || true
-          
-          cp dist/full/*.whl releases/irpai-${{ steps.get_version.outputs.VERSION }}-full-py3-none-any.whl || true
-          cp dist/full/*.tar.gz releases/irpai-${{ steps.get_version.outputs.VERSION }}-full.tar.gz || true
-          
-          cp dist/dev/*.whl releases/irpai-${{ steps.get_version.outputs.VERSION }}-dev-py3-none-any.whl || true
-          cp dist/dev/*.tar.gz releases/irpai-${{ steps.get_version.outputs.VERSION }}-dev.tar.gz || true
-          
-          echo "📦 Release assets prepared:"
-          ls -lh releases/
       
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -148,7 +114,7 @@ jobs:
           body_path: release_notes.md
           draft: false
           prerelease: false
-          files: releases/*
+          files: dist/*
           fail_on_unmatched_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -159,11 +125,12 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Files Published:" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Core Variant:**" >> $GITHUB_STEP_SUMMARY
-          ls -lh dist/core/ >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          ls -lh dist/ >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Full Variant:**" >> $GITHUB_STEP_SUMMARY
-          ls -lh dist/full/ >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Dev Variant:**" >> $GITHUB_STEP_SUMMARY
-          ls -lh dist/dev/ >> $GITHUB_STEP_SUMMARY
+          echo "### Installation Options:" >> $GITHUB_STEP_SUMMARY
+          echo "- \`pip install irpai\` - Minimal" >> $GITHUB_STEP_SUMMARY
+          echo "- \`pip install irpai[core]\` - ML features" >> $GITHUB_STEP_SUMMARY
+          echo "- \`pip install irpai[full]\` - All features" >> $GITHUB_STEP_SUMMARY
+          echo "- \`pip install irpai[dev]\` - Development" >> $GITHUB_STEP_SUMMARY
