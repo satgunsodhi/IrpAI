@@ -13,7 +13,9 @@ Usage::
     print(pack.to_json())
 """
 
+
 from __future__ import annotations
+
 
 import time
 from pathlib import Path
@@ -223,13 +225,24 @@ class IrpAIPipeline:
             return DetectionOutput(image_size=(w, h))
 
     def _run_ocr(self, normalized: NormalizedImage) -> OCRResult:
-        """Run OCR text extraction."""
+    
         try:
+            # Primary OCR (usually PaddleOCR)
             return self.ocr.recognize(normalized.ocr_ready)
+
         except Exception:
-            log.exception("OCR failed, using empty result")
-            w, h = normalized.processed_size
-            return OCRResult(image_size=(w, h))
+            log.warning("Primary OCR failed, using Tesseract fallback")
+
+            try:
+                from irpai.ocr.tesseract_ocr import TesseractOCREngine
+
+                fallback = TesseractOCREngine(self.config.ocr)
+                return fallback.recognize(normalized.ocr_ready)
+
+            except Exception:
+                log.exception("Fallback OCR also failed")
+                w, h = normalized.processed_size
+                return OCRResult(image_size=(w, h))
 
     def _run_vlm(self, normalized: NormalizedImage) -> VLMResult | None:
         """Run VLM captioning (full tier only)."""

@@ -60,7 +60,7 @@ class PaddleOCREngine(BaseOCR):
             use_gpu=self.cfg.use_gpu,
             det_db_thresh=self.cfg.det_db_thresh,
             rec_batch_num=self.cfg.rec_batch_num,
-            show_log=False,
+            
         )
         return self._engine
 
