@@ -90,7 +90,7 @@ class Normalizer:
         ratio = max_dim / longest
         new_w = int(w * ratio)
         new_h = int(h * ratio)
-        return img.resize((new_w, new_h), Image.LANCZOS)
+        return img.resize((new_w, new_h), Image.Resampling.LANCZOS)
 
     def _denoise(self, img: Image.Image) -> Image.Image:
         """Apply non-local-means denoising."""

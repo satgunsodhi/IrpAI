@@ -141,7 +141,7 @@ class YOLODetector(BaseDetector):
 
                     # Map class name
                     class_name = result.names.get(cls_id, f"class_{cls_id}")
-                    ui_label = _COCO_TO_UI.get(class_name, class_name)
+                    ui_label = _COCO_TO_UI.get(class_name) or class_name
 
                     bbox = (
                         int(xyxy[0]),

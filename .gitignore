@@ -1,5 +1,6 @@
 .pytest_cache
-*/__pycache__
 .venv
 dist
 *.egg-info
+__pycache__/
+yolo*

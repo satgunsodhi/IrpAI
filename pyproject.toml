@@ -34,7 +34,7 @@ dependencies = [
 [project.optional-dependencies]
 ocr-paddle = [
     "paddlepaddle>=2.6",
-    "paddleocr>=2.9",
+    "paddleocr>=2.8, <3",
 ]
 ocr-tesseract = [
     "pytesseract>=0.3.10",
@@ -71,7 +71,7 @@ Issues = "https://github.com/aakaash/irpai/issues"
 irpai = "irpai.cli:main"
 
 [tool.setuptools.packages.find]
-where = ["."]
+where = ["src"]
 include = ["irpai*"]
 
 [tool.ruff]

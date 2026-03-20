@@ -42,7 +42,6 @@ class PaddleOCREngine:
                     use_angle_cls=self.config.use_angle_cls,
                     lang=self.config.language,
                     use_gpu=False,  # Controlled by pipeline config
-                    show_log=False,
                 )
                 logger.info("PaddleOCR engine loaded")
             except ImportError:

@@ -14,6 +14,7 @@ from __future__ import annotations
 from typing import Any
 
 import numpy as np
+import os
 from PIL import Image
 
 from irpai.config import OCRConfig
@@ -32,6 +33,7 @@ class PaddleOCREngine(BaseOCR):
     """
 
     def __init__(self, config: OCRConfig | None = None) -> None:
+        os.environ['PADDLE_DISABLE_ONEDNN'] = '1'
         self.cfg = config or OCRConfig(engine="paddleocr")
         self._engine: Any = None
 
@@ -57,10 +59,8 @@ class PaddleOCREngine(BaseOCR):
         self._engine = PaddleOCR(
             use_angle_cls=True,
             lang=self.cfg.language,
-            use_gpu=self.cfg.use_gpu,
             det_db_thresh=self.cfg.det_db_thresh,
             rec_batch_num=self.cfg.rec_batch_num,
-            show_log=False,
         )
         return self._engine
 
@@ -77,7 +77,7 @@ class PaddleOCREngine(BaseOCR):
 
         h, w = arr.shape[:2]
 
-        raw: list[Any] = engine.ocr(arr, cls=True)
+        raw: list[Any] = engine.ocr(arr)
 
         if not raw or raw[0] is None:
             log.debug("PaddleOCR returned no results")

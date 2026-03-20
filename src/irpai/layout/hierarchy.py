@@ -44,7 +44,7 @@ class LayoutNode:
 
     def flatten(self) -> list[LayoutNode]:
         """Depth-first flattening of the tree."""
-        nodes = [self]
+        nodes: list[LayoutNode] = [self]
         for child in self.children:
             nodes.extend(child.flatten())
         return nodes

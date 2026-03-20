@@ -137,7 +137,7 @@ class IrpAIPipeline:
 
         # -- Layer 1: Preprocessing -----------------------------------------
         log.info("▸ Layer 1: Preprocessing")
-        normalized = self._normalizer.normalize(image)
+        normalized = self._normalizer.normalize(str(image) if isinstance(image, Path) else image)
 
         # -- Layer 2: Detection ---------------------------------------------
         log.info("▸ Layer 2: Detection")

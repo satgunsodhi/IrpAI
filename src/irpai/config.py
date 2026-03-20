@@ -119,6 +119,9 @@ class OCRConfig:
     paragraph_merge: bool = True
     """Attempt to merge lines into paragraphs by proximity."""
 
+    tesseract_path: str | None = None
+    """Path to tesseract executable (if not in PATH)."""
+
 
 @dataclass(frozen=True)
 class LayoutConfig:

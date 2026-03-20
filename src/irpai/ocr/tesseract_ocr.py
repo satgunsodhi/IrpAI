@@ -59,6 +59,9 @@ class TesseractOCREngine(BaseOCR):
                 "and ensure the tesseract binary is on your PATH."
             ) from exc
 
+        if self.cfg.tesseract_path:
+            pytesseract.pytesseract.tesseract_cmd = self.cfg.tesseract_path
+
         if isinstance(image, np.ndarray):
             image = Image.fromarray(image)
 
