@@ -61,6 +61,7 @@ class PaddleOCREngine(BaseOCR):
             lang=self.cfg.language,
             det_db_thresh=self.cfg.det_db_thresh,
             rec_batch_num=self.cfg.rec_batch_num,
+            
         )
         return self._engine
 
