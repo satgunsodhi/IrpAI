@@ -23,7 +23,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
-from irpai.config import IrpAIConfig, Tier
+from irpai.config import IrpAIConfig
 from irpai.context.assembler import ContextAssembler
 from irpai.context.formatter import format_for_llm
 from irpai.context.schema import ContextPack, PipelineMetadata
@@ -33,8 +33,6 @@ from irpai.layout.analyzer import LayoutAnalyzer, LayoutResult
 from irpai.ocr.base import BaseOCR, OCRResult
 from irpai.ocr.engine import create_ocr_engine
 from irpai.preprocessing.normalizer import NormalizedImage, Normalizer
-from irpai.research.helper import ResearchHelper, ResearchOutput
-from irpai.vlm.base import BaseVLM, VLMResult
 from irpai.utils.image import load_image
 from irpai.utils.logging import get_logger
 
@@ -45,22 +43,20 @@ class IrpAIPipeline:
     """
     Main IrpAI pipeline.
 
-    Orchestrates the 5-layer processing chain::
+    Orchestrates the processing chain::
 
         Input Image
             → Preprocessing (normalize, scale, denoise)
-            → Detection (YOLO UI element detection)
+            → Detection (smart rule-based UI region detection)
             → OCR (PaddleOCR / Tesseract text extraction)
             → Layout Analysis (region grouping + hierarchy)
             → Context Assembly (structured JSON context pack)
-            → [Optional] VLM captioning (Florence-2)
-            → [Optional] Research helper (web search)
 
     Parameters
     ----------
     config:
-        Pipeline configuration.  Use ``Tier.LITE``, ``Tier.STANDARD``,
-        or ``Tier.FULL`` for quick presets.
+        Pipeline configuration.  Use ``Tier.LITE`` or ``Tier.STANDARD``
+        for quick presets.
     """
 
     def __init__(self, config: IrpAIConfig | None = None) -> None:
@@ -70,11 +66,9 @@ class IrpAIPipeline:
         # Layers are initialised lazily — they load models on first use
         self._normalizer = Normalizer(self.config.preprocessing)
         self._ocr: BaseOCR | None = None
-        self._detector: BaseDetector | None = None
-        self._vlm: BaseVLM | None = None
+        self._detector: BaseDetector = FallbackGridDetector()
         self._layout = LayoutAnalyzer(self.config.layout)
         self._assembler = ContextAssembler(self.config.output)
-        self._research = ResearchHelper(self.config.research)
 
     # -- lazy layer init ----------------------------------------------------
 
@@ -86,31 +80,7 @@ class IrpAIPipeline:
 
     @property
     def detector(self) -> BaseDetector:
-        if self._detector is None:
-            if self.config.tier == Tier.LITE:
-                self._detector = FallbackGridDetector()
-            else:
-                try:
-                    import ultralytics as _  # noqa: F401 – availability check
-                    from irpai.detection.yolo_detector import YOLODetector
-                    self._detector = YOLODetector(self.config.detection)
-                except ImportError:
-                    log.warning("YOLO unavailable, using grid fallback")
-                    self._detector = FallbackGridDetector()
         return self._detector
-
-    @property
-    def vlm(self) -> BaseVLM | None:
-        if self.config.tier != Tier.FULL:
-            return None
-        if self._vlm is None:
-            try:
-                from irpai.vlm.florence import FlorenceVLM
-                self._vlm = FlorenceVLM(self.config.vlm)
-            except ImportError:
-                log.warning("Florence-2 dependencies unavailable, skipping VLM")
-                return None
-        return self._vlm
 
     # -- main entry point ---------------------------------------------------
 
@@ -136,39 +106,53 @@ class IrpAIPipeline:
             Structured context ready for LLM consumption.
         """
         t0 = time.perf_counter()
+        stage_timings: dict[str, float] = {}
+        warnings: list[str] = []
 
         # -- Layer 1: Preprocessing -----------------------------------------
         log.info("▸ Layer 1: Preprocessing")
+        t_stage = time.perf_counter()
         normalized = self._normalizer.normalize(str(image) if isinstance(image, Path) else image)
+        stage_timings["preprocessing"] = round((time.perf_counter() - t_stage) * 1000, 1)
+
+        # Low-resolution warning
+        quality = normalized.quality_metrics
+        if quality.get("is_low_resolution"):
+            warnings.append(
+                f"Low resolution image ({quality.get('resolution')}). "
+                "Results may be less accurate."
+            )
 
         # -- Layer 2: Detection ---------------------------------------------
         log.info("▸ Layer 2: Detection")
+        t_stage = time.perf_counter()
         detections = self._run_detection(normalized)
+        stage_timings["detection"] = round((time.perf_counter() - t_stage) * 1000, 1)
 
         # -- Layer 3: OCR ---------------------------------------------------
         log.info("▸ Layer 3: OCR")
+        t_stage = time.perf_counter()
         ocr_result = self._run_ocr(normalized)
+        stage_timings["ocr"] = round((time.perf_counter() - t_stage) * 1000, 1)
 
         # -- Layer 4: Layout Analysis ---------------------------------------
         log.info("▸ Layer 4: Layout Analysis")
+        t_stage = time.perf_counter()
         layout = self._layout.analyze(ocr_result, detections)
-
-        # -- Layer 4b: VLM (full tier only) ---------------------------------
-        vlm_result: VLMResult | None = None
-        if self.vlm is not None:
-            log.info("▸ Layer 4b: VLM Captioning")
-            vlm_result = self._run_vlm(normalized)
+        stage_timings["layout"] = round((time.perf_counter() - t_stage) * 1000, 1)
 
         # -- Layer 5: Context Assembly --------------------------------------
         log.info("▸ Layer 5: Context Assembly")
+        t_stage = time.perf_counter()
         total_ms = (time.perf_counter() - t0) * 1000
+
+        confidence = self._compute_confidence(detections, ocr_result)
 
         metadata = PipelineMetadata(
             irpai_version="0.1.0",
             tier=self.config.tier.value,
             ocr_engine=self.ocr.name,
             detection_model=self.detector.name,
-            vlm_model=self.vlm.name if self.vlm else "none",
             total_ms=round(total_ms, 1),
             image_size=normalized.processed_size,
         )
@@ -177,27 +161,25 @@ class IrpAIPipeline:
             layout=layout,
             ocr=ocr_result,
             detections=detections,
-            vlm=vlm_result,
             metadata=metadata,
         )
-
-        # -- Optional: Research helper --------------------------------------
-        if self.config.research.enabled:
-            log.info("▸ Research Helper")
-            research = self._research.research(pack)
-            if research.results:
-                pack.summary.key_elements.append(
-                    f"Research: {len(research.results)} snippets found"
-                )
+        stage_timings["assembly"] = round((time.perf_counter() - t_stage) * 1000, 1)
 
         log.info(
-            "✓ Pipeline complete in %.0f ms — %d regions, ~%d tokens",
+            "✓ Pipeline complete in %.0f ms — %d regions, "
+            "confidence=%.2f, ~%d tokens  [%s]",
             total_ms,
             len(pack.regions),
+            confidence,
             pack.token_estimate(),
+            ", ".join(f"{k}={v:.0f}ms" for k, v in stage_timings.items()),
         )
+        if warnings:
+            for w in warnings:
+                log.warning("⚠ %s", w)
 
         return pack
+
 
     def run_formatted(
         self,
@@ -244,17 +226,41 @@ class IrpAIPipeline:
                 w, h = normalized.processed_size
                 return OCRResult(image_size=(w, h))
 
-    def _run_vlm(self, normalized: NormalizedImage) -> VLMResult | None:
-        """Run VLM captioning (full tier only)."""
-        if self.vlm is None:
-            return None
-        try:
-            return self.vlm.run(normalized.color)
-        except Exception:
-            log.exception("VLM failed")
-            return None
-
     # -- utilities ----------------------------------------------------------
+
+    @staticmethod
+    def _compute_confidence(
+        detections: DetectionOutput, ocr_result: OCRResult,
+    ) -> float:
+        """
+        Compute an overall pipeline confidence score (0.0–1.0).
+
+        Aggregates detection confidence, OCR confidence, and applies
+        a penalty for very few detections.
+        """
+        scores: list[float] = []
+
+        # Detection confidence
+        if detections.detections:
+            avg_det = sum(d.confidence for d in detections.detections) / len(
+                detections.detections
+            )
+            scores.append(avg_det)
+
+        # OCR confidence
+        if ocr_result.all_lines:
+            scores.append(ocr_result.mean_confidence)
+
+        # Penalty for sparse detections
+        total = len(detections.detections)
+        if total < 3:
+            scores.append(0.3)
+        elif total < 10:
+            scores.append(0.6)
+        else:
+            scores.append(0.9)
+
+        return round(sum(scores) / len(scores), 3) if scores else 0.0
 
     def warmup(self) -> None:
         """
@@ -263,7 +269,5 @@ class IrpAIPipeline:
         """
         log.info("Warming up pipeline (tier=%s)", self.config.tier.value)
         _ = self.ocr
-        self.detector.warmup()
-        if self.vlm is not None:
-            self.vlm.warmup()
         log.info("Warmup complete")
+

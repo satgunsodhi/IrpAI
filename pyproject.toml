@@ -32,28 +32,13 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-ocr-paddle = [
-    "paddlepaddle>=2.6",
-    "paddleocr>=2.8, <3",
-]
-ocr-tesseract = [
-    "pytesseract>=0.3.10",
-]
-detection = [
-    "ultralytics>=8.4",
-]
-vlm = [
-    "torch>=2.1",
-    "transformers>=4.40",
-    "einops>=0.7",
-    "timm>=0.9",
-]
-research = [
-    "httpx>=0.27",
-    "beautifulsoup4>=4.12",
+ocr-easyocr = [
+    "easyocr>=1.7",
+    "torch>=2.0",
+    "torchvision>=0.15",
 ]
 all = [
-    "irpai[ocr-paddle,ocr-tesseract,detection,vlm,research]",
+    "irpai[ocr-easyocr]",
 ]
 dev = [
     "pytest>=8.0",

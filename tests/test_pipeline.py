@@ -49,19 +49,16 @@ class TestPipelineInit:
         pipeline = IrpAIPipeline(config)
         assert pipeline.config.tier == Tier.STANDARD
 
-    def test_full_tier_init(self) -> None:
-        config = IrpAIConfig(tier=Tier.FULL)
-        pipeline = IrpAIPipeline(config)
-        assert pipeline.config.tier == Tier.FULL
-
-    def test_vlm_none_for_non_full(self) -> None:
-        pipeline = IrpAIPipeline(IrpAIConfig(tier=Tier.STANDARD))
-        assert pipeline.vlm is None
-
     def test_grid_detector_for_lite(self) -> None:
         pipeline = IrpAIPipeline(IrpAIConfig(tier=Tier.LITE))
         from irpai.detection.yolo_detector import FallbackGridDetector
         assert isinstance(pipeline.detector, FallbackGridDetector)
+
+    def test_grid_detector_for_standard(self) -> None:
+        pipeline = IrpAIPipeline(IrpAIConfig(tier=Tier.STANDARD))
+        from irpai.detection.yolo_detector import FallbackGridDetector
+        assert isinstance(pipeline.detector, FallbackGridDetector)
+
 
 
 class TestPipelineImageHandling:

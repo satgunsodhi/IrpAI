@@ -2,8 +2,8 @@
 Context Assembler
 
 Takes the outputs of all pipeline layers (preprocessing metadata,
-detection regions, OCR text, layout analysis, optional VLM captions)
-and assembles them into a :class:`ContextPack`.
+detection regions, OCR text, layout analysis) and assembles them
+into a :class:`ContextPack`.
 """
 
 from __future__ import annotations
@@ -22,7 +22,6 @@ from irpai.detection.base import DetectionOutput
 from irpai.layout.analyzer import LayoutResult, SemanticRegion
 from irpai.layout.hierarchy import HierarchyBuilder, LayoutNode
 from irpai.ocr.base import OCRResult
-from irpai.vlm.base import VLMResult
 from irpai.utils.logging import get_logger
 
 log = get_logger("context")
@@ -61,7 +60,6 @@ class ContextAssembler:
         layout: LayoutResult,
         ocr: OCRResult | None = None,
         detections: DetectionOutput | None = None,
-        vlm: VLMResult | None = None,
         metadata: PipelineMetadata | None = None,
     ) -> ContextPack:
         """
@@ -75,8 +73,6 @@ class ContextAssembler:
             Raw OCR result (for full-text access and confidence data).
         detections:
             Raw detection output (for element counts and model info).
-        vlm:
-            Optional VLM result (captions, objects, OCR from vision model).
         metadata:
             Pipeline run metadata (versions, timing, etc.).
         """
@@ -90,7 +86,7 @@ class ContextAssembler:
             hierarchy = {"roots": [node.to_dict() for node in tree]}
 
         # -- Summary --------------------------------------------------------
-        summary = self._build_summary(layout, ocr, vlm)
+        summary = self._build_summary(layout, ocr)
 
         # -- Assemble -------------------------------------------------------
         pack = ContextPack(
@@ -141,7 +137,6 @@ class ContextAssembler:
         self,
         layout: LayoutResult,
         ocr: OCRResult | None,
-        vlm: VLMResult | None,
     ) -> ScreenSummary:
         """Generate the natural-language screen summary."""
         full_text = layout.full_text or (ocr.full_text if ocr else "")
@@ -154,13 +149,12 @@ class ContextAssembler:
         ]
 
         # Description
-        description = self._generate_description(layout, app_type, vlm)
+        description = self._generate_description(layout, app_type)
 
         return ScreenSummary(
             description=description,
             app_type=app_type,
             key_elements=key_elements,
-            vlm_caption=vlm.caption if vlm else "",
         )
 
     @staticmethod
@@ -175,15 +169,9 @@ class ContextAssembler:
     def _generate_description(
         layout: LayoutResult,
         app_type: str,
-        vlm: VLMResult | None,
     ) -> str:
         """Build a one-paragraph description of the screen."""
         parts: list[str] = []
-
-        if vlm and vlm.detailed_caption:
-            parts.append(vlm.detailed_caption)
-        elif vlm and vlm.caption:
-            parts.append(vlm.caption)
 
         if app_type != "unknown":
             parts.append(f"Application type: {app_type}.")
@@ -236,3 +224,4 @@ class ContextAssembler:
                     children=region.children,
                     properties=region.properties,
                 )
+

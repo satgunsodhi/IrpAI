@@ -1,6 +1,42 @@
-.pytest_cache
-.venv
-dist
-*.egg-info
+# Byte-compiled / optimized / DLL files
 __pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environments
+.venv/
+venv/
+env/
+ENV/
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+.eggs/
+
+# Testing and coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+test_results*.txt
+
+# Caches and tooling
+.ruff_cache/
+.mypy_cache/
+.pre-commit-config.yaml
+
+# IDEs and Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Project specifics (legacy YOLO checks)
 yolo*
