@@ -28,7 +28,7 @@ from irpai.context.assembler import ContextAssembler
 from irpai.context.formatter import format_for_llm
 from irpai.context.schema import ContextPack, PipelineMetadata
 from irpai.detection.base import BaseDetector, DetectionOutput
-from irpai.detection.yolo_detector import FallbackGridDetector
+from irpai.detection.hybrid_detector import HybridDetector
 from irpai.layout.analyzer import LayoutAnalyzer, LayoutResult
 from irpai.ocr.base import BaseOCR, OCRResult
 from irpai.ocr.engine import create_ocr_engine
@@ -47,7 +47,7 @@ class IrpAIPipeline:
 
         Input Image
             → Preprocessing (normalize, scale, denoise)
-            → Detection (smart rule-based UI region detection)
+            → Detection (RT-DETR primary + rule fallback)
             → OCR (PaddleOCR / Tesseract text extraction)
             → Layout Analysis (region grouping + hierarchy)
             → Context Assembly (structured JSON context pack)
@@ -66,7 +66,15 @@ class IrpAIPipeline:
         # Layers are initialised lazily — they load models on first use
         self._normalizer = Normalizer(self.config.preprocessing)
         self._ocr: BaseOCR | None = None
-        self._detector: BaseDetector = FallbackGridDetector()
+        self._detector: BaseDetector = HybridDetector(
+            use_ml=self.config.detection.use_ml,
+            ml_model_id=self.config.detection.model_id,
+            confidence_threshold=self.config.detection.confidence_threshold,
+            structural_boost=self.config.detection.structural_boost,
+            nms_iou_threshold=self.config.detection.nms_iou_threshold,
+            max_detections=self.config.detection.max_detections,
+            device=self.config.detection.device,
+        )
         self._layout = LayoutAnalyzer(self.config.layout)
         self._assembler = ContextAssembler(self.config.output)
 

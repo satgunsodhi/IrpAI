@@ -37,8 +37,20 @@ ocr-easyocr = [
     "torch>=2.0",
     "torchvision>=0.15",
 ]
+detection-ml = [
+    "torch>=2.0",
+    "transformers>=4.40",
+]
+training = [
+    "torch>=2.0",
+    "torchvision>=0.15",
+    "transformers>=4.40",
+    "datasets>=2.18",
+    "accelerate>=0.30",
+    "pycocotools>=2.0.7",
+]
 all = [
-    "irpai[ocr-easyocr]",
+    "irpai[ocr-easyocr,detection-ml]",
 ]
 dev = [
     "pytest>=8.0",

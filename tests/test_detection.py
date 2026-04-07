@@ -6,7 +6,8 @@ import numpy as np
 from PIL import Image
 
 from irpai.detection.base import DetectionOutput, DetectionResult
-from irpai.detection.yolo_detector import FallbackGridDetector
+from irpai.detection.hybrid_detector import HybridDetector
+from irpai.detection.rule_fallback import FallbackGridDetector
 
 
 class TestDetectionTypes:
@@ -103,3 +104,29 @@ class TestFallbackGridDetector:
 
         assert output.image_size == (900, 600)
         assert len(output.detections) > 0
+
+
+class TestHybridDetector:
+    def test_rule_only_mode(self) -> None:
+        img = Image.new("RGB", (640, 360), color=(30, 30, 30))
+        detector = HybridDetector(use_ml=False)
+
+        output = detector.detect(img)
+        assert output.image_size == (640, 360)
+        assert len(output.detections) >= 1
+
+    def test_ml_failure_falls_back(self) -> None:
+        class BrokenDetector:
+            name = "BrokenDetector"
+
+            def detect(self, _image: object) -> DetectionOutput:
+                raise RuntimeError("simulated failure")
+
+        detector = HybridDetector(use_ml=False)
+        detector._ml_detector = BrokenDetector()  # type: ignore[assignment]
+
+        arr = np.zeros((300, 500, 3), dtype=np.uint8)
+        output = detector.detect(arr)
+
+        assert output.image_size == (500, 300)
+        assert len(output.detections) >= 1

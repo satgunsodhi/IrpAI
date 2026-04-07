@@ -7,14 +7,14 @@ on everyday hardware.
 
 Architecture (5-layer pipeline):
     1. Preprocessing — normalize, denoise, scale
-    2. Detection — smart rule-based UI region detection
+    2. Detection — RT-DETR primary + rule-based fallback
     3. OCR — text extraction via PaddleOCR / Tesseract
     4. Layout — region grouping + hierarchical structure
     5. Context — structured JSON context pack for LLMs
 
 Tiers:
-    - lite     : CPU-only, Tesseract + rule-based layout
-    - standard : CPU, PaddleOCR + smart detection + layout analysis
+    - lite     : CPU-only, fallback detection + OCR + layout
+    - standard : CPU, RT-DETR + fallback + OCR + layout analysis
 """
 
 __version__ = "0.1.0"

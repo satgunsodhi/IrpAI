@@ -1,7 +1,7 @@
 """
 Abstract base classes and result types for UI element detectors.
 
-Every detection backend (YOLO, OmniParser, …) implements
+Every detection backend (RT-DETR, rule fallback, …) implements
 :class:`BaseDetector` so the pipeline can swap models transparently.
 """
 

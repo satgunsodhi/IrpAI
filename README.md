@@ -9,14 +9,33 @@ Even strong LLMs often miss UI structure, key text, and spatial relationships wh
 ## Quick Start
 
 ```bash
-# Minimal install (CPU only, Tesseract OCR)
-pip install -e ".[ocr-tesseract]"
+# Minimal install (CPU-only fallback detection + EasyOCR)
+pip install -e .
 
-# Standard install (PaddleOCR + YOLO)
-pip install -e ".[ocr-paddle,detection]"
+# Standard install (RT-DETR primary + fallback detector)
+pip install -e ".[detection-ml]"
 
-# Full install (includes Florence-2 VLM)
+# Training extras (fine-tuning scripts + datasets)
+pip install -e ".[training]"
+
+# Full install (all optional extras)
 pip install -e ".[all]"
+```
+
+## Contributor Setup
+
+```bash
+# 1) Create and activate a virtual environment
+python -m venv .venv
+
+# Windows PowerShell
+.venv\Scripts\Activate.ps1
+
+# Linux/macOS
+source .venv/bin/activate
+
+# 2) Install package + training tools
+pip install -e ".[training]"
 ```
 
 ### Basic usage
@@ -51,11 +70,11 @@ irpai screenshot.png --tier lite --format markdown -o context.md
 │          │ Scale → Denoise → Sharpen → OCR-ready variant │
 ├──────────────────────────────────────────────────────────┤
 │  Layer 2 │ DETECTION                                     │
-│          │ YOLO26n UI element detection (buttons, menus, │
-│          │ headers, icons, text fields, nav bars …)      │
+│          │ HybridDetector                                 │
+│          │ RT-DETR primary + rule-based fallback          │
 ├──────────────────────────────────────────────────────────┤
 │  Layer 3 │ OCR                                           │
-│          │ PaddleOCR PP-OCRv5 (primary) or Tesseract 5   │
+│          │ EasyOCR (primary) or Tesseract 5 fallback      │
 │          │ (fallback) → blocks, lines, words + positions │
 ├──────────────────────────────────────────────────────────┤
 │  Layer 4 │ LAYOUT ANALYSIS                               │
@@ -79,8 +98,8 @@ irpai screenshot.png --tier lite --format markdown -o context.md
 
 | Tier | Dependencies | Hardware | Speed | Accuracy |
 |------|-------------|----------|-------|----------|
-| **lite** | Tesseract | CPU, 4 GB RAM | ~100 ms | ★★☆☆ |
-| **standard** | PaddleOCR + YOLO | CPU, 8 GB RAM | ~300 ms | ★★★☆ |
+| **lite** | Rule fallback detector + EasyOCR | CPU, 4 GB RAM | ~100 ms | ★★☆☆ |
+| **standard** | RT-DETR + EasyOCR | CPU, 8 GB RAM | ~300 ms | ★★★☆ |
 | **full** | + Florence-2 VLM | GPU 6 GB VRAM | ~800 ms | ★★★★ |
 
 ## Output Example
@@ -124,7 +143,9 @@ irpai/
 │   └── normalizer.py        # Image scaling, denoising, sharpening
 ├── detection/
 │   ├── base.py              # Abstract detector interface
-│   └── yolo_detector.py     # YOLO + grid fallback
+│   ├── hybrid_detector.py   # RT-DETR + fallback orchestrator
+│   ├── rt_detr_detector.py  # Primary ML detector
+│   └── rule_fallback.py     # Rule-based backup detector
 ├── ocr/
 │   ├── base.py              # Abstract OCR interface
 │   ├── paddle_ocr.py        # PaddleOCR backend
@@ -152,6 +173,86 @@ irpai/
 ```bash
 pip install -e ".[dev]"
 pytest
+```
+
+## Training
+
+RT-DETR fine-tuning material is in [docs/RTDETR_TRAINING.md](docs/RTDETR_TRAINING.md).
+
+Single command (cross-platform):
+
+```bash
+python examples/training/run_mobile_training.py
+```
+
+Manual mobile-first workflow (advanced):
+
+```bash
+# 1) Build a mixed COCO dataset with guaranteed mobile coverage
+python examples/training/prepare_mobile_mixed_coco.py \
+  --output-root data/screenspot_mobile_mixed_coco \
+  --total-samples 240 \
+  --val-ratio 0.2 \
+  --mobile-min-ratio 0.5
+
+# 2) Train RT-DETR on the prepared dataset
+python examples/training/finetune_rtdetr_ui.py \
+  --train-images data/screenspot_mobile_mixed_coco/train/images \
+  --train-annotations data/screenspot_mobile_mixed_coco/train/annotations.json \
+  --val-images data/screenspot_mobile_mixed_coco/val/images \
+  --val-annotations data/screenspot_mobile_mixed_coco/val/annotations.json \
+  --output-dir checkpoints/rtdetr-ui-mobile-mixed-complete \
+  --model-id PekingU/rtdetr_r18vd_coco_o365 \
+  --epochs 10 \
+  --batch-size 4
+```
+
+Best trained model path:
+
+```text
+checkpoints/rtdetr-ui-mobile-mixed-complete/checkpoint-best
+```
+
+Repository hygiene:
+
+- Generated datasets in `data/` are ignored.
+- Trained checkpoints in `checkpoints/` are ignored.
+- You do not need to push either to GitHub.
+
+## Model Release (GitHub)
+
+Use this flow to publish the best checkpoint as a GitHub Release asset (recommended).
+
+1. Build/export best checkpoint zip:
+
+```bash
+python examples/training/run_mobile_training.py --skip-prepare --export-best-zip
+```
+
+2. Authenticate GitHub CLI (one time):
+
+```bash
+gh auth login
+```
+
+3. Create a release tag and release:
+
+```bash
+gh release create v0.1.0-models \
+  --title "v0.1.0 models" \
+  --notes "RT-DETR mobile mixed checkpoint-best"
+```
+
+4. Upload artifact zip to the release:
+
+```bash
+gh release upload v0.1.0-models artifacts/rtdetr-ui-mobile-mixed-complete-checkpoint-best.zip --clobber
+```
+
+5. Verify uploaded assets:
+
+```bash
+gh release view v0.1.0-models
 ```
 
 ## License

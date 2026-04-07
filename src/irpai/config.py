@@ -7,7 +7,7 @@ for each pipeline layer.
 Tiers
 -----
 - **lite**     : CPU-only, Tesseract OCR, rule-based layout.  Minimal deps.
-- **standard** : CPU, PaddleOCR PP-OCRv5, smart fallback detection, layout analysis.
+- **standard** : CPU, RT-DETR + fallback detection, OCR, layout analysis.
 """
 
 from __future__ import annotations
@@ -23,6 +23,18 @@ class Tier(str, enum.Enum):
 
     LITE = "lite"
     STANDARD = "standard"
+
+
+DEFAULT_RTDETR_HF_MODEL_ID = "PekingU/rtdetr_r18vd_coco_o365"
+LOCAL_RTDETR_CHECKPOINT = (
+    Path(__file__).resolve().parents[2] / "checkpoints" / "rtdetr-ui-mobile-mixed-complete" / "checkpoint-best"
+)
+
+
+def _default_detection_model_id() -> str:
+    if LOCAL_RTDETR_CHECKPOINT.exists():
+        return str(LOCAL_RTDETR_CHECKPOINT)
+    return DEFAULT_RTDETR_HF_MODEL_ID
 
 
 # ---------------------------------------------------------------------------
@@ -79,6 +91,32 @@ class OCRConfig:
 
     tesseract_path: str | None = None
     """Path to tesseract executable (if not in PATH)."""
+
+
+@dataclass(frozen=True)
+class DetectionConfig:
+    """Detection layer settings."""
+
+    use_ml: bool = True
+    """Enable RT-DETR as the primary detector."""
+
+    model_id: str = field(default_factory=_default_detection_model_id)
+    """RT-DETR model identifier or local checkpoint path."""
+
+    confidence_threshold: float = 0.35
+    """Minimum confidence for ML detections."""
+
+    structural_boost: bool = True
+    """Merge structural rule detections with ML detections."""
+
+    nms_iou_threshold: float = 0.35
+    """IoU threshold used during final NMS merge."""
+
+    max_detections: int = 120
+    """Maximum number of detections returned by the detector."""
+
+    device: Literal["cpu", "cuda", "mps", "auto"] = "cpu"
+    """Torch device for RT-DETR inference."""
 
 
 @dataclass(frozen=True)
@@ -146,6 +184,7 @@ class IrpAIConfig:
     tier: Tier = Tier.STANDARD
 
     preprocessing: PreprocessingConfig = field(default_factory=PreprocessingConfig)
+    detection: DetectionConfig = field(default_factory=DetectionConfig)
     ocr: OCRConfig = field(default_factory=OCRConfig)
     layout: LayoutConfig = field(default_factory=LayoutConfig)
     output: OutputConfig = field(default_factory=OutputConfig)
@@ -163,6 +202,11 @@ class IrpAIConfig:
     def _apply_tier_defaults(self) -> None:
         """Override sub-configs to match the selected tier."""
         if self.tier == Tier.LITE:
+            object.__setattr__(self, "detection", DetectionConfig(
+                use_ml=False,
+                structural_boost=True,
+                device="cpu",
+            ))
             object.__setattr__(self, "ocr", OCRConfig(
                 engine="easyocr",
                 fallback_engine="none",
@@ -170,6 +214,11 @@ class IrpAIConfig:
             ))
 
         elif self.tier == Tier.STANDARD:
+            object.__setattr__(self, "detection", DetectionConfig(
+                use_ml=True,
+                structural_boost=True,
+                device="cpu",
+            ))
             object.__setattr__(self, "ocr", OCRConfig(
                 engine="easyocr",
                 fallback_engine="none",

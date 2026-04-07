@@ -1,7 +1,7 @@
 """
 End-to-end pipeline tests.
 
-These tests use the FallbackGridDetector and mock OCR to avoid
+These tests use HybridDetector (with fallback path) and mock OCR to avoid
 requiring any ML model dependencies.
 """
 
@@ -51,13 +51,17 @@ class TestPipelineInit:
 
     def test_grid_detector_for_lite(self) -> None:
         pipeline = IrpAIPipeline(IrpAIConfig(tier=Tier.LITE))
-        from irpai.detection.yolo_detector import FallbackGridDetector
-        assert isinstance(pipeline.detector, FallbackGridDetector)
+        from irpai.detection.hybrid_detector import HybridDetector
+
+        assert isinstance(pipeline.detector, HybridDetector)
+        assert pipeline.detector.use_ml is False
 
     def test_grid_detector_for_standard(self) -> None:
         pipeline = IrpAIPipeline(IrpAIConfig(tier=Tier.STANDARD))
-        from irpai.detection.yolo_detector import FallbackGridDetector
-        assert isinstance(pipeline.detector, FallbackGridDetector)
+        from irpai.detection.hybrid_detector import HybridDetector
+
+        assert isinstance(pipeline.detector, HybridDetector)
+        assert pipeline.detector.use_ml is True
 
 
 
