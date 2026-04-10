@@ -28,7 +28,7 @@ Empirical results from the built-in research framework (run on Darwin arm64, Pyt
 ## Quick Start
 
 ```bash
-# Minimal install (CPU-only fallback detection + Tesseract OCR)
+# Minimal install (CPU-only fallback detection + EasyOCR)
 pip install -e .
 
 # Standard install (RT-DETR primary detector)
@@ -116,8 +116,7 @@ irpai screenshot.png --tier lite --format markdown -o context.md
 │          │ RT-DETR primary + rule-based fallback          │
 ├──────────────────────────────────────────────────────────┤
 │  Layer 3 │ OCR                                           │
-│          │ EasyOCR / PaddleOCR (primary)                 │
-│          │ Tesseract 5 (fallback)                        │
+│          │ EasyOCR (primary)                             │
 │          │ → blocks, lines, words + positions            │
 ├──────────────────────────────────────────────────────────┤
 │  Layer 4 │ LAYOUT ANALYSIS                               │
@@ -141,8 +140,8 @@ irpai screenshot.png --tier lite --format markdown -o context.md
 
 | Tier | Dependencies | Hardware | Avg Latency | Accuracy |
 |------|-------------|----------|------------|----------|
-| **lite** | Rule fallback + Tesseract OCR | CPU, 4 GB RAM | ~636ms | ★★☆☆ |
-| **standard** | RT-DETR + EasyOCR/PaddleOCR | CPU, 8 GB RAM | ~857ms | ★★★☆ |
+| **lite** | Rule fallback + EasyOCR | CPU, 4 GB RAM | ~636ms | ★★☆☆ |
+| **standard** | RT-DETR + EasyOCR | CPU, 8 GB RAM | ~857ms | ★★★☆ |
 | **full** | + Florence-2 VLM | GPU 6 GB VRAM | ~1–2s | ★★★★ |
 
 Latency figures measured on Apple M-series (arm64). Lite warmup: 763ms → 636ms steady-state. Standard warmup: 2.4s → 857ms steady-state (RT-DETR model load).
@@ -183,7 +182,7 @@ Latency figures measured on Apple M-series (arm64). Lite warmup: 763ms → 636ms
   },
   "meta": {
     "tier": "standard",
-    "ocr_engine": "tesseract",
+    "ocr_engine": "easyocr",
     "detection_model": "HybridDetector(ml=RTDETRDetector)",
     "total_ms": 287.3,
     "image_size": [1200, 900]
@@ -231,8 +230,7 @@ irpai/
 │   ├── base.py              # Abstract OCR interface + OCRResult
 │   ├── engine.py            # Factory with priority-ordered auto-fallback
 │   ├── easy_ocr.py          # EasyOCR backend
-│   ├── paddle_ocr.py        # PaddleOCR backend
-│   └── tesseract_ocr.py     # Tesseract 5 backend
+│   └── __init__.py          # OCR package exports
 ├── layout/
 │   ├── analyzer.py          # Region grouping + role classification
 │   └── hierarchy.py         # Spatial containment tree builder

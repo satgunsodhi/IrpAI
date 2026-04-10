@@ -6,7 +6,7 @@ for each pipeline layer.
 
 Tiers
 -----
-- **lite**     : CPU-only, Tesseract OCR, rule-based layout.  Minimal deps.
+- **lite**     : CPU-only, EasyOCR, rule-based layout.  Minimal deps.
 - **standard** : CPU, RT-DETR + fallback detection, OCR, layout analysis.
 """
 
@@ -65,11 +65,8 @@ class PreprocessingConfig:
 class OCRConfig:
     """OCR engine settings."""
 
-    engine: Literal["easyocr", "paddleocr", "tesseract"] = "easyocr"
+    engine: Literal["easyocr"] = "easyocr"
     """Primary OCR backend."""
-
-    fallback_engine: Literal["tesseract", "none"] = "none"
-    """Fallback if primary fails or is unavailable."""
 
     language: str = "en"
     """Language code(s) for OCR."""
@@ -78,19 +75,10 @@ class OCRConfig:
     """Minimum confidence threshold for valid text extraction."""
 
     use_gpu: bool = False
-    """Use GPU acceleration for OCR (PaddleOCR only)."""
-
-    det_db_thresh: float = 0.3
-    """PaddleOCR text detection threshold."""
-
-    rec_batch_num: int = 6
-    """PaddleOCR recognition batch size."""
+    """Use GPU acceleration for OCR."""
 
     paragraph_merge: bool = True
     """Attempt to merge lines into paragraphs by proximity."""
-
-    tesseract_path: str | None = None
-    """Path to tesseract executable (if not in PATH)."""
 
 
 @dataclass(frozen=True)
@@ -209,7 +197,6 @@ class IrpAIConfig:
             ))
             object.__setattr__(self, "ocr", OCRConfig(
                 engine="easyocr",
-                fallback_engine="none",
                 use_gpu=False,
             ))
 
@@ -221,6 +208,5 @@ class IrpAIConfig:
             ))
             object.__setattr__(self, "ocr", OCRConfig(
                 engine="easyocr",
-                fallback_engine="none",
                 use_gpu=False,
             ))

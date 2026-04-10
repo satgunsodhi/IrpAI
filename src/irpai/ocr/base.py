@@ -1,7 +1,7 @@
 """
 Abstract base classes and result types for OCR engines.
 
-Every OCR backend (PaddleOCR, Tesseract, …) implements :class:`BaseOCR`
+Every OCR backend implements :class:`BaseOCR`
 so the pipeline can swap engines transparently.
 """
 
@@ -120,4 +120,4 @@ class BaseOCR(abc.ABC):
     @property
     @abc.abstractmethod
     def name(self) -> str:
-        """Human-readable engine name, e.g. ``'PaddleOCR'``."""
+        """Human-readable engine name, e.g. ``'easyocr'``."""

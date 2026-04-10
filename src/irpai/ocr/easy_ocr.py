@@ -3,7 +3,7 @@ EasyOCR engine implementation.
 
 A permissively licensed (Apache 2.0) fallback engine that uses PyTorch.
 It provides a good balance between accuracy and ease of installation
-without requiring invasive licensing like Tesseract's `pytesseract` wrapper.
+for CPU-friendly screenshot OCR.
 """
 
 from __future__ import annotations

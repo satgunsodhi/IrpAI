@@ -48,7 +48,7 @@ class IrpAIPipeline:
         Input Image
             → Preprocessing (normalize, scale, denoise)
             → Detection (RT-DETR primary + rule fallback)
-            → OCR (PaddleOCR / Tesseract text extraction)
+            → OCR (EasyOCR text extraction)
             → Layout Analysis (region grouping + hierarchy)
             → Context Assembly (structured JSON context pack)
 
@@ -215,24 +215,12 @@ class IrpAIPipeline:
             return DetectionOutput(image_size=(w, h))
 
     def _run_ocr(self, normalized: NormalizedImage) -> OCRResult:
-    
         try:
-            # Primary OCR (usually PaddleOCR)
             return self.ocr.recognize(normalized.ocr_ready)
-
         except Exception:
-            log.warning("Primary OCR failed, using Tesseract fallback")
-
-            try:
-                from irpai.ocr.tesseract_ocr import TesseractOCREngine
-
-                fallback = TesseractOCREngine(self.config.ocr)
-                return fallback.recognize(normalized.ocr_ready)
-
-            except Exception:
-                log.exception("Fallback OCR also failed")
-                w, h = normalized.processed_size
-                return OCRResult(image_size=(w, h))
+            log.exception("OCR failed")
+            w, h = normalized.processed_size
+            return OCRResult(image_size=(w, h))
 
     # -- utilities ----------------------------------------------------------
 

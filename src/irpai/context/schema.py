@@ -93,7 +93,7 @@ class ContextPack:
             ...
           ],
           "hierarchy": { ... },
-          "meta": { "tier": "standard", "ocr_engine": "PaddleOCR", ... }
+                    "meta": { "tier": "standard", "ocr_engine": "easyocr", ... }
         }
     """
 

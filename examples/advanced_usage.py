@@ -35,10 +35,8 @@ def custom_config_example() -> None:
             sharpen=True,
         ),
         ocr=OCRConfig(
-            engine="paddleocr",
-            fallback_engine="tesseract",
+            engine="easyocr",
             paragraph_merge=True,
-            rec_batch_num=8,
         ),
         detection=DetectionConfig(
             model_name="yolo26s",  # slightly larger model for better accuracy

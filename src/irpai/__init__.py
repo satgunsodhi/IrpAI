@@ -8,7 +8,7 @@ on everyday hardware.
 Architecture (5-layer pipeline):
     1. Preprocessing — normalize, denoise, scale
     2. Detection — RT-DETR primary + rule-based fallback
-    3. OCR — text extraction via PaddleOCR / Tesseract
+    3. OCR — text extraction via EasyOCR
     4. Layout — region grouping + hierarchical structure
     5. Context — structured JSON context pack for LLMs
 

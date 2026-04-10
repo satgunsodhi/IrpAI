@@ -5,7 +5,7 @@ Demonstrates the simplest way to use IrpAI: take a screenshot,
 run the pipeline, and get structured context for an LLM.
 
 Requirements:
-    pip install irpai[ocr-tesseract]   # Lite tier (CPU only)
+    pip install irpai[ocr-easyocr]     # Lite tier (CPU only)
     pip install irpai[all]             # Full install
 """
 
@@ -17,9 +17,8 @@ from irpai import IrpAIPipeline, IrpAIConfig, Tier
 def main() -> None:
     # ── 1. Configure ─────────────────────────────────────────────────
     # Choose a tier based on your hardware:
-    #   Tier.LITE     → CPU only, Tesseract OCR, no ML models
-    #   Tier.STANDARD → CPU, PaddleOCR + YOLO detection
-    #   Tier.FULL     → GPU, PaddleOCR + YOLO + Florence-2 VLM
+    #   Tier.LITE     → CPU only, EasyOCR, no ML detector
+    #   Tier.STANDARD → CPU, EasyOCR + RT-DETR detection
 
     config = IrpAIConfig(tier=Tier.STANDARD)
     pipeline = IrpAIPipeline(config)
@@ -149,7 +148,7 @@ def _create_demo_image(path: Path) -> None:
         font=font_status,
     )
 
-    # ── Save with 150 DPI so Tesseract sees large-enough glyphs ──────
+    # ── Save with 150 DPI so OCR sees large-enough glyphs ────────────
     img.save(path, dpi=(150, 150))
     print(f"Demo image saved to {path}  ({W}×{H} @150 DPI)")
 
