@@ -12,7 +12,11 @@ Quantifies IrpAI's cost benefits versus raw vision-LLM approaches:
 
 from __future__ import annotations
 
-import resource
+try:
+    import resource
+except ModuleNotFoundError:
+    resource = None
+
 import time
 import tracemalloc
 from dataclasses import dataclass, field
@@ -155,20 +159,27 @@ def _benchmark_single(
     tier_name: str,
 ) -> TierCostResult:
     """Benchmark a single scene on a single pipeline configuration."""
-    # Measure peak memory via resource module (more reliable than tracemalloc)
-    mem_before = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    # Prefer OS-level RSS when available; fallback to Python allocation peak on Windows.
+    use_resource = resource is not None
+    if not use_resource:
+        tracemalloc.start()
 
     t0 = time.perf_counter()
     pack = _safe_pipeline_run(pipeline, scene.image)
     latency_ms = (time.perf_counter() - t0) * 1000
 
-    mem_after = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-    # On macOS ru_maxrss is in bytes; on Linux it's in KB
-    import platform
-    if platform.system() == "Darwin":
-        peak_mb = mem_after / (1024 * 1024)
+    if use_resource:
+        mem_after = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+        # On macOS ru_maxrss is in bytes; on Linux it's in KB
+        import platform
+        if platform.system() == "Darwin":
+            peak_mb = mem_after / (1024 * 1024)
+        else:
+            peak_mb = mem_after / 1024
     else:
-        peak_mb = mem_after / 1024
+        _, peak_bytes = tracemalloc.get_traced_memory()
+        tracemalloc.stop()
+        peak_mb = peak_bytes / (1024 * 1024)
 
     if pack is None:
         return TierCostResult(tier=tier_name, scene=scene.ground_truth.scene_name)
