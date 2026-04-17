@@ -398,3 +398,26 @@ This document should be kept aligned with the runtime implementation in:
 - `src/irpai/config.py`
 - `src/irpai/detection/`
 - `src/irpai/models.py`
+ine)
+
+### Long-term
+
+- Optional VLM enrichment pass (Florence-2 or equivalent) as a pluggable post-processor
+- Richer region-level scene understanding and app-type detection
+- Multi-language OCR support
+
+---
+
+This document should be kept aligned with the runtime implementation in:
+- `src/irpai/pipeline.py`
+- `src/irpai/config.py`
+- `src/irpai/detection/`
+- `src/irpai/models.py`
+end strategy
+
+Keep this document aligned with:
+- `src/irpai/pipeline.py`
+- `src/irpai/config.py`
+- `src/irpai/context/schema.py`
+- `src/irpai/context/formatter.py`
+- `src/irpai/detection/`
