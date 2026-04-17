@@ -170,6 +170,10 @@ Purpose:
 - enforce token budget (`max_context_tokens`)
 - produce JSON / Markdown / system-prompt-ready formats via `format_for_llm`
 
+### Optional: VLM (`irpai.vlm`)
+
+The `irpai.vlm` package contains a Florence-2 backend (`florence.py`) and an abstract base interface (`base.py`). These modules exist in the codebase but are **not wired into the active pipeline**. The VLM stage is planned roadmap work (see section 5.3 and section 9).
+
 ---
 
 ## 4. Detection Design (RT-DETR + Fallback)

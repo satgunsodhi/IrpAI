@@ -34,6 +34,9 @@ pip install -e .
 # Standard install (EasyOCR + RT-DETR primary detector)
 pip install -e ".[all]"
 
+# Recommended: RT-DETR + EasyOCR (full standard pipeline)
+pip install -e ".[all]"
+
 # Training extras (fine-tuning scripts + datasets)
 pip install -e ".[training]"
 ```
@@ -86,8 +89,8 @@ from irpai.context.formatter import format_for_llm
 
 # Three output styles
 context = format_for_llm(pack, style="system_prompt")  # injects as system message
-context = format_for_llm(pack, style="markdown")        # human-readable
-context = format_for_llm(pack, style="json")            # structured dict
+context = format_for_llm(pack, style="markdown")        # human-readable Markdown
+context = format_for_llm(pack, style="json")            # compact JSON string
 ```
 
 ### CLI
@@ -203,7 +206,7 @@ pack.to_json(include_hierarchy=False)
 ## Project Structure
 
 ```
-irpai/
+src/irpai/
 ├── __init__.py              # Package entry point
 ├── config.py                # Tiered configuration system
 ├── pipeline.py              # Main orchestrator (5-layer pipeline)
@@ -215,7 +218,8 @@ irpai/
 │   ├── base.py              # Abstract detector interface + DetectionResult
 │   ├── hybrid_detector.py   # RT-DETR + rule-based NMS orchestrator
 │   ├── rt_detr_detector.py  # Primary ML detector (HuggingFace RT-DETR)
-│   └── rule_fallback.py     # Rule-based backup (grid + color split + contour)
+│   ├── rule_fallback.py     # Rule-based backup (grid + color split + contour)
+│   └── yolo_detector.py     # Legacy import shim (re-exports FallbackGridDetector)
 ├── ocr/
 │   ├── base.py              # Abstract OCR interface + OCRResult
 │   ├── engine.py            # Factory with priority-ordered auto-fallback
