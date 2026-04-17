@@ -3,10 +3,10 @@ IrpAI — Advanced Usage Example
 
 Demonstrates:
     - Custom per-layer configuration
-    - Using the VLM tier with Florence-2
-    - Accessing individual layer outputs
+    - Using a fine-tuned RT-DETR checkpoint
+    - Running individual pipeline layers (step-by-step)
     - Injecting context into an LLM API call
-    - Using the research helper
+    - Controlling token budget and output format
 """
 
 from pathlib import Path
@@ -18,8 +18,6 @@ from irpai.config import (
     OCRConfig,
     OutputConfig,
     PreprocessingConfig,
-    ResearchConfig,
-    VLMConfig,
 )
 from irpai.pipeline import IrpAIPipeline
 from irpai.context.formatter import format_for_llm
@@ -39,8 +37,9 @@ def custom_config_example() -> None:
             paragraph_merge=True,
         ),
         detection=DetectionConfig(
-            model_name="yolo26s",  # slightly larger model for better accuracy
+            use_ml=True,
             confidence_threshold=0.3,
+            structural_boost=True,
             device="cpu",
         ),
         layout=LayoutConfig(
@@ -64,46 +63,30 @@ def custom_config_example() -> None:
     print(f"Custom config result: {len(pack.regions)} regions, ~{pack.token_estimate()} tokens")
 
 
-def full_tier_example() -> None:
-    """Show the GPU tier with Florence-2 VLM captioning."""
-    config = IrpAIConfig(
-        tier=Tier.FULL,
-        vlm=VLMConfig(
-            model_name="microsoft/Florence-2-base",
-            device="cuda",
-            dtype="float16",
-            tasks=("<CAPTION>", "<DETAILED_CAPTION>", "<OD>"),
-        ),
-    )
+def fine_tuned_checkpoint_example() -> None:
+    """Show how to use a locally fine-tuned RT-DETR checkpoint."""
+    # After running examples/training/run_mobile_training.py, a best checkpoint
+    # is saved to checkpoints/rtdetr-ui-mobile-mixed-complete/checkpoint-best.
+    # IrpAIConfig auto-detects this path; you can also set it explicitly:
+    checkpoint = Path("checkpoints/rtdetr-ui-mobile-mixed-complete/checkpoint-best")
 
-    pipeline = IrpAIPipeline(config)
-    pipeline.warmup()  # pre-load models
-
-    pack = pipeline.run("screenshot.png")
-
-    # VLM caption is included in the summary
-    print(f"VLM caption: {pack.summary.vlm_caption}")
-    print(f"Description: {pack.summary.description}")
-
-
-def research_example() -> None:
-    """Show the research helper fetching context from the web."""
     config = IrpAIConfig(
         tier=Tier.STANDARD,
-        research=ResearchConfig(
-            enabled=True,
-            search_provider="duckduckgo",
-            max_results=3,
+        detection=DetectionConfig(
+            use_ml=True,
+            model_id=str(checkpoint) if checkpoint.exists() else "PekingU/rtdetr_r18vd_coco_o365",
+            confidence_threshold=0.35,
+            structural_boost=True,
+            device="cpu",
         ),
     )
 
     pipeline = IrpAIPipeline(config)
-    pack = pipeline.run("screenshot.png")
+    pipeline.warmup()  # pre-load models to avoid first-call latency
 
-    # Research results are noted in key_elements
-    for elem in pack.summary.key_elements:
-        if "Research" in elem:
-            print(f"  {elem}")
+    pack = pipeline.run("screenshot.png")
+    print(f"Fine-tuned model result: {len(pack.regions)} regions, ~{pack.token_estimate()} tokens")
+    print(f"Detection model: {pack.meta.detection_model}")
 
 
 def llm_injection_example() -> None:
@@ -138,37 +121,60 @@ def llm_injection_example() -> None:
     # response = openai.ChatCompletion.create(model="gpt-4", messages=messages)
 
 
+def token_budget_example() -> None:
+    """Show how to control token budget and bbox/hierarchy inclusion."""
+    pipeline = IrpAIPipeline(IrpAIConfig(tier=Tier.LITE))
+    pack = pipeline.run("screenshot.png")
+
+    print(f"Full output:          ~{pack.token_estimate()} tokens")
+
+    # Omitting bboxes saves 7–13% tokens
+    json_no_bbox = pack.to_json(include_bboxes=False)
+    print(f"Without bboxes:       ~{len(json_no_bbox) // 4} tokens")
+
+    # Omitting hierarchy saves 35–56% tokens for complex layouts
+    json_no_hier = pack.to_json(include_hierarchy=False)
+    print(f"Without hierarchy:    ~{len(json_no_hier) // 4} tokens")
+
+    # Markdown format is the most compact
+    md = pack.to_markdown()
+    print(f"Markdown format:      ~{len(md) // 4} tokens")
+
+
 def step_by_step_example() -> None:
-    """Show how to run individual layers for debugging."""
-    from irpai.preprocessing import Normalizer
+    """Show how to run individual layers for debugging or custom orchestration."""
+    from irpai.config import PreprocessingConfig, OCRConfig, DetectionConfig, LayoutConfig, OutputConfig
+    from irpai.preprocessing.normalizer import Normalizer
     from irpai.ocr.engine import create_ocr_engine
-    from irpai.detection.yolo_detector import FallbackGridDetector
-    from irpai.layout import LayoutAnalyzer
-    from irpai.context import ContextAssembler
+    from irpai.detection.hybrid_detector import HybridDetector
+    from irpai.layout.analyzer import LayoutAnalyzer
+    from irpai.context.assembler import ContextAssembler
+    from irpai.context.schema import PipelineMetadata
 
     # Step 1: Preprocess
-    normalizer = Normalizer()
+    normalizer = Normalizer(PreprocessingConfig())
     normalized = normalizer.normalize("screenshot.png")
-    print(f"Preprocessed: {normalized}")
+    print(f"Preprocessed: {normalized.processed_size}")
 
     # Step 2: OCR
-    ocr_engine = create_ocr_engine()
+    ocr_engine = create_ocr_engine(OCRConfig())
     ocr_result = ocr_engine.recognize(normalized.ocr_ready)
     print(f"OCR: {len(ocr_result.all_lines)} lines, confidence={ocr_result.mean_confidence:.2f}")
 
-    # Step 3: Detection
-    detector = FallbackGridDetector(rows=3, cols=4)
+    # Step 3: Detection (lite path — rule-based fallback only)
+    detector = HybridDetector(use_ml=False)
     detections = detector.detect(normalized.color)
     print(f"Detection: {len(detections.detections)} regions")
 
     # Step 4: Layout analysis
-    analyzer = LayoutAnalyzer()
+    analyzer = LayoutAnalyzer(LayoutConfig())
     layout = analyzer.analyze(ocr_result, detections)
     print(f"Layout: {len(layout.regions)} semantic regions")
 
     # Step 5: Assemble
-    assembler = ContextAssembler()
-    pack = assembler.assemble(layout, ocr=ocr_result, detections=detections)
+    assembler = ContextAssembler(OutputConfig())
+    metadata = PipelineMetadata(tier="lite", ocr_engine=ocr_engine.name, detection_model=detector.name)
+    pack = assembler.assemble(layout, ocr=ocr_result, detections=detections, metadata=metadata)
     print(f"Context pack: {pack.token_estimate()} tokens")
     print(pack.to_json(compact=False))
 
@@ -178,9 +184,9 @@ if __name__ == "__main__":
 
     examples = {
         "custom": custom_config_example,
-        "full": full_tier_example,
-        "research": research_example,
+        "checkpoint": fine_tuned_checkpoint_example,
         "llm": llm_injection_example,
+        "tokens": token_budget_example,
         "steps": step_by_step_example,
     }
 
@@ -189,4 +195,4 @@ if __name__ == "__main__":
     else:
         print("Available examples:")
         for name, fn in examples.items():
-            print(f"  python -m examples.advanced_usage {name}  — {fn.__doc__.strip()}")
+            print(f"  python examples/advanced_usage.py {name}  — {fn.__doc__.strip()}")

@@ -7,9 +7,6 @@ These provide rich, validated domain types with utility methods
 (IoU computation, spatial containment, serialisation helpers, etc.)
 while remaining interoperable with the lightweight dataclass types
 used internally by each pipeline sub-package.
-
-Adapted from the original flat ``irpai.old.models`` module and
-extended with converters for the new modular architecture.
 """
 
 from __future__ import annotations

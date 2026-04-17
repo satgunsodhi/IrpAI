@@ -28,17 +28,14 @@ Empirical results from the built-in research framework (run on Darwin arm64, Pyt
 ## Quick Start
 
 ```bash
-# Minimal install (CPU-only fallback detection + EasyOCR)
+# Minimal install (CPU-only fallback detection — no OCR)
 pip install -e .
 
-# Standard install (RT-DETR primary detector)
-pip install -e ".[detection-ml]"
+# Standard install (EasyOCR + RT-DETR primary detector)
+pip install -e ".[all]"
 
 # Training extras (fine-tuning scripts + datasets)
 pip install -e ".[training]"
-
-# Full install (all optional extras)
-pip install -e ".[all]"
 ```
 
 ### Contributor Setup
@@ -54,7 +51,7 @@ python -m venv .venv
 source .venv/bin/activate
 
 # 2) Install package + dev tools
-pip install -e ".[training]"
+pip install -e ".[all]"
 ```
 
 ---
@@ -124,15 +121,9 @@ irpai screenshot.png --tier lite --format markdown -o context.md
 │          │ Classify roles (heading/body/button/nav/…)    │
 │          │ Build hierarchy tree + reading order          │
 ├──────────────────────────────────────────────────────────┤
-│  Layer 4b│ VLM CAPTIONING (full tier only)               │
-│          │ Florence-2-base scene captioning + OD + OCR   │
-├──────────────────────────────────────────────────────────┤
 │  Layer 5 │ CONTEXT ASSEMBLY                              │
 │          │ → Structured JSON / Markdown / System prompt  │
 │          │ Token-budget enforcement, reading-order sort  │
-├──────────────────────────────────────────────────────────┤
-│  Optional│ RESEARCH HELPER                               │
-│          │ Web search from error messages / URLs / cues  │
 └──────────────────────────────────────────────────────────┘
 ```
 
@@ -142,7 +133,6 @@ irpai screenshot.png --tier lite --format markdown -o context.md
 |------|-------------|----------|------------|----------|
 | **lite** | Rule fallback + EasyOCR | CPU, 4 GB RAM | ~636ms | ★★☆☆ |
 | **standard** | RT-DETR + EasyOCR | CPU, 8 GB RAM | ~857ms | ★★★☆ |
-| **full** | + Florence-2 VLM | GPU 6 GB VRAM | ~1–2s | ★★★★ |
 
 Latency figures measured on Apple M-series (arm64). Lite warmup: 763ms → 636ms steady-state. Standard warmup: 2.4s → 857ms steady-state (RT-DETR model load).
 
@@ -234,19 +224,17 @@ irpai/
 ├── layout/
 │   ├── analyzer.py          # Region grouping + role classification
 │   └── hierarchy.py         # Spatial containment tree builder
-├── vlm/
-│   ├── base.py              # Abstract VLM interface
-│   └── florence.py          # Florence-2 integration (full tier)
 ├── context/
 │   ├── schema.py            # ContextPack / Region / Summary output types
 │   ├── assembler.py         # Merges all layers → structured output pack
 │   └── formatter.py         # JSON / Markdown / system-prompt serialisation
-├── research/
-│   └── helper.py            # Web search from screenshot cues
-└── utils/
-    ├── image.py             # Shared image operations (IoU, load, convert)
-    ├── pii.py               # PII detection and redaction utilities
-    └── logging.py           # Logger setup
+├── utils/
+│   ├── image.py             # Shared image operations (IoU, load, convert)
+│   ├── pii.py               # PII detection and redaction utilities
+│   └── logging.py           # Logger setup
+└── vlm/                     # VLM integration (extensible, not active by default)
+    ├── base.py              # Abstract VLM interface
+    └── florence.py          # Florence-2 integration stub
 
 tests/
 ├── conftest.py              # Shared fixtures (synthetic scenes, pipelines)
@@ -284,6 +272,11 @@ pytest
 Run the full research framework to reproduce the published metrics:
 
 ```bash
+# Windows PowerShell
+.venv\Scripts\Activate.ps1
+python tests/run_research.py
+
+# Linux/macOS
 source .venv/bin/activate
 python tests/run_research.py
 ```
@@ -354,6 +347,8 @@ Best trained model path:
 ```text
 checkpoints/rtdetr-ui-mobile-mixed-complete/checkpoint-best
 ```
+
+`IrpAIConfig` auto-detects this path at startup — no manual configuration needed if the checkpoint directory exists.
 
 Repository hygiene:
 

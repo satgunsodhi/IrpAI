@@ -6,7 +6,7 @@ Simple command-line interface for running the pipeline on screenshots.
 Usage::
 
     irpai screenshot.png
-    irpai screenshot.png --tier full --format markdown
+    irpai screenshot.png --tier standard --format markdown
     irpai screenshot.png --output result.json
 """
 
@@ -33,9 +33,9 @@ def main(argv: list[str] | None = None) -> None:
     )
     parser.add_argument(
         "--tier",
-        choices=["lite", "standard", "full"],
+        choices=["lite", "standard"],
         default="standard",
-        help="Execution tier (default: standard).",
+        help="Execution tier: 'lite' (CPU-only, no ML detector) or 'standard' (RT-DETR + fallback). Default: standard.",
     )
     parser.add_argument(
         "--format",

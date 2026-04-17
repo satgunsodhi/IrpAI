@@ -1,91 +1,75 @@
 # RT-DETR UI Detector Training Guide
 
-This guide explains how to train a UI-focused RT-DETR checkpoint and use it in IrpAI.
+This guide covers how to train a UI-focused RT-DETR checkpoint and use it in IrpAI.
 
-## 1. Goal
+## 1. Scope
 
-Train an RT-DETR detector with mobile screenshot coverage using a consolidated dataset pipeline.
+Current runtime detection integration:
+- primary detector: RT-DETR (standard tier)
+- fallback detector: rule-based structural detector
 
 Current prepared dataset classes in this repo:
+- `icon`
+- `text`
 
-- icon
-- text
-
-If you need additional UI classes, extend the mapping and source labels in:
-
-- examples/training/prepare_mobile_mixed_coco.py
-
-The runtime pipeline already supports this via `HybridDetector`:
-- primary: `RTDETRDetector`
-- fallback: `FallbackGridDetector`
+If you need more UI classes, extend mapping logic in:
+- `examples/training/prepare_mobile_mixed_coco.py`
 
 ## 2. Data Sources
 
-The consolidated prep flow combines:
+The prep pipeline consolidates data from:
+- ScreenSpot-Pro
+- ScreenSpot-v2 mobile split
 
-- ScreenSpot-Pro (professional desktop screenshots)
-- ScreenSpot-v2 mobile split (mobile screenshots)
-
-The prep script enforces a minimum mobile ratio and exports COCO format.
-
-## 3. Directory Layout
-
-Prepared dataset output:
+Prepared output is COCO format under:
 
 ```text
-data/
-  screenspot_mobile_mixed_coco/
-    raw/
-    train/
-      images/
-      annotations.json
-    val/
-      images/
-      annotations.json
+data/screenspot_mobile_mixed_coco/
+  train/images/
+  train/annotations.json
+  val/images/
+  val/annotations.json
 ```
 
-Each `annotations.json` must contain:
-- `images`
-- `annotations`
-- `categories`
-
-## 4. Install Training Dependencies
-
-```bash
-pip install -e ".[training]"
-```
-
-Recommended environment setup:
+## 3. Environment Setup
 
 ```bash
 python -m venv .venv
+```
 
-# Windows PowerShell
+Windows PowerShell:
+
+```powershell
 .venv\Scripts\Activate.ps1
+```
 
-# Linux/macOS
+Linux/macOS:
+
+```bash
 source .venv/bin/activate
+```
 
+Install training dependencies:
+
+```bash
 pip install -e ".[training]"
 ```
 
-## 5. Start Fine-Tuning
-
-Recommended (single command, cross-platform):
+## 4. Recommended Training Command
 
 ```bash
 python examples/training/run_mobile_training.py
 ```
 
-To also export the best checkpoint as a zip suitable for GitHub Releases:
+To export best checkpoint as a zip artifact:
 
 ```bash
 python examples/training/run_mobile_training.py --export-best-zip
 ```
 
-Manual flow (advanced):
+## 5. Manual Training Flow (Advanced)
 
-Step 1: prepare the mixed COCO dataset with mobile coverage.
+Step 1: prepare mixed COCO dataset.
 
 ```bash
 python examples/training/prepare_mobile_mixed_coco.py \
@@ -96,7 +80,7 @@ python examples/training/prepare_mobile_mixed_coco.py \
   --seed 42
 ```
 
-Step 2: run RT-DETR fine-tuning.
+Step 2: fine-tune RT-DETR.
 
 ```bash
 python examples/training/finetune_rtdetr_ui.py \
@@ -111,31 +95,24 @@ python examples/training/finetune_rtdetr_ui.py \
   --lr 3e-5
 ```
 
-## 6. Validate and Export
+## 6. Checkpoints and Runtime Loading
 
-After training, the best checkpoint folder should include:
-
-- `config.json`
-- `model.safetensors` or `pytorch_model.bin`
-- `preprocessor_config.json`
-
-You can keep it local or upload it to HuggingFace.
-
-Consolidated local best checkpoint:
+Expected best-checkpoint folder:
 
 ```text
 checkpoints/rtdetr-ui-mobile-mixed-complete/checkpoint-best
 ```
 
-If `--export-best-zip` is used, this archive is created:
+Expected files include:
+- `config.json`
+- `preprocessor_config.json`
+- `model.safetensors` or `pytorch_model.bin`
 
-```text
-artifacts/rtdetr-ui-mobile-mixed-complete-checkpoint-best.zip
-```
+Runtime default behavior in `src/irpai/config.py`:
+1. if local `checkpoint-best` exists, use it as detector `model_id`
+2. otherwise use Hub model `PekingU/rtdetr_r18vd_coco_o365`
 
-## 7. Use Trained Model in IrpAI
-
-Configure the detector model ID/path:
+## 7. Use a Trained Checkpoint in IrpAI
 
 ```python
 from irpai.config import IrpAIConfig, DetectionConfig, Tier
@@ -151,58 +128,49 @@ config.detection = DetectionConfig(
 )
 
 pipeline = IrpAIPipeline(config)
+pack = pipeline.run("screenshot.png")
 ```
 
-## 8. Labeling Guidance
+## 8. Practical Labeling Guidance
 
 For the current two-class setup:
+- `icon`: box tightly around interactive icon glyph
+- `text`: box tightly around visible target text
 
-- icon: tight box around the clickable icon glyph
-- text: tight box around visible target text only
+## 9. Troubleshooting
 
-## 9. Practical Tips
+### 9.1 Windows safetensors write-lock (os error 1224)
 
-- Start from RT-DETR-R18 and train 10+ epochs.
-- Keep mobile coverage >= 40% for mobile-oriented use-cases.
-- Use resolution close to real screenshots (1080-1920 width).
-- Track class-level precision/recall for icon vs text separately.
-- Keep `FallbackGridDetector` enabled as a structural safety net.
+Symptom:
+- save/export fails because training is reading and writing the same checkpoint path simultaneously
 
-## 10. Recommended Evaluation Metrics
+Safe approach:
+- train from Hub base model id
+- write outputs into a checkpoint directory
+- only point runtime to local `checkpoint-best` after training/export completes
 
-Use COCO metrics and report:
+### 9.2 ML dependencies missing
 
-- mAP@0.50:0.95
-- mAP@0.50
-- AP per UI class
-- Inference latency on CPU
+Install required extras:
 
-For pipeline quality, also track:
+```bash
+pip install -e ".[training]"
+```
 
-- OCR-to-region assignment accuracy
-- Heading/body role consistency after layout merge
-- End-to-end context usefulness on real screenshots
+### 9.3 Inference too slow on CPU
 
-## 11. What To Commit
+Options:
+- lower input resolution in preprocessing config
+- tune confidence threshold / max detections
+- keep fallback enabled for resilience
 
-- Commit scripts and markdown docs.
-- Do not commit generated `data/` folders.
-- Do not commit generated `checkpoints/` folders.
+## 10. Model Artifact Sharing
 
-The repository `.gitignore` is configured accordingly.
+Recommended:
+- export `checkpoint-best` to zip in `artifacts/`
+- upload zip as a GitHub Release asset
+- do not commit checkpoint folders to git
 
-## 12. Runtime Fallback Behavior
-
-At inference time, RT-DETR loading uses this order:
-
-1. configured model id/path (local checkpoint or Hub id)
-2. fallback Hub base model: `PekingU/rtdetr_r18vd_coco_o365`
-3. if RT-DETR cannot load, `HybridDetector` falls back to `FallbackGridDetector`
-
-This keeps the pipeline operational even if local weights are missing.
-
-## 13. GitHub Upload Recommendation
-
-- Prefer uploading the zip archive as a GitHub Release asset.
-- Avoid committing checkpoint files directly to the repo.
-- If you must version model weights in Git, use Git LFS.
+Repository hygiene:
+- generated datasets in `data/` are git-ignored
+- generated checkpoints in `checkpoints/` are git-ignored

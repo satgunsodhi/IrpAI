@@ -16,8 +16,15 @@ pip install dist/irpai-0.1.0-py3-none-any.whl
 ## Development Installation (Editable)
 
 ```powershell
-# Install in editable mode (uses PEP 660 wheel-based editable installs)
-pip install -e .
+# Install core + all optional extras in editable mode
+pip install -e ".[all]"
+
+# Or install only what you need:
+pip install -e .                      # core only (no OCR, no ML detector)
+pip install -e ".[ocr-easyocr]"       # + EasyOCR
+pip install -e ".[detection-ml]"      # + RT-DETR
+pip install -e ".[training]"          # + training scripts
+pip install -e ".[dev]"               # + pytest, ruff, mypy
 ```
 
 ## Distribution
@@ -29,6 +36,16 @@ python -m build
 # This creates:
 # - dist/irpai-0.1.0-py3-none-any.whl  (wheel)
 # - dist/irpai-0.1.0.tar.gz            (source)
+```
+
+## Multi-Variant Automated Builds
+
+The GitHub Actions workflow (`.github/workflows/`) automatically builds all distribution variants when a version tag is pushed. Refer to [RELEASE.md](RELEASE.md) for the full release workflow.
+
+For local multi-variant builds:
+
+```powershell
+python build_all.py
 ```
 
 ## Advantages of Wheel Installation
@@ -43,5 +60,5 @@ python -m build
 
 ```powershell
 pip show irpai
-irpai info
+irpai --help
 ```

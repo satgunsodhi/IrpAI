@@ -1,109 +1,69 @@
 # Release Guide
 
-## Automated GitHub Releases
+This guide describes how to publish an IrpAI release using the existing GitHub workflow.
 
-The project is now configured to automatically build and publish all 3 variants to GitHub Releases when you push a version tag.
+Workflow file:
+- `.github/workflows/release.yml`
 
-## Creating a New Release
+Trigger:
+- push a tag matching `v*` (example: `v0.1.1`)
 
-### 1. Update Version Number
+## 1. Before Tagging
 
-First, update the version in `pyproject.toml`:
+1. Update version in `pyproject.toml`.
+2. Confirm docs and changelog notes are current.
+3. Validate builds locally:
 
-```toml
-[project]
-name = "irpai"
-version = "0.1.0"
+```bash
+python -m build
 ```
 
-### 2. Commit Changes
+4. Run tests:
+
+```bash
+pytest
+```
+
+## 2. Create a Release Tag
 
 ```bash
 git add pyproject.toml
-git commit -m "Bump version to 0.1.0"
+git commit -m "Bump version to 0.1.1"
 git push
+
+git tag v0.1.1
+git push origin v0.1.1
 ```
 
-### 3. Create and Push Version Tag
+After tag push, GitHub Actions will:
+- build package artifacts into `dist/`
+- create a GitHub release
+- upload `dist/*` as release assets
+
+## 3. Published Artifacts
+
+Current workflow publishes one package build (not multiple variant directories):
+- wheel file(s) from `dist/*.whl`
+- source distribution from `dist/*.tar.gz`
+
+## 4. Manual Release (Fallback)
 
 ```bash
-git tag v0.1.0
-git push origin v0.1.0
+python -m build
 ```
 
-**That's it!** GitHub Actions will automatically:
-- ✅ Build all 3 variants (core, full, dev)
-- ✅ Create a GitHub Release with version notes
-- ✅ Upload all 6 distribution files as release assets
-- ✅ Generate a professional release page
+Then create a GitHub release manually and upload files from `dist/`.
 
-## What Gets Published
+## 5. Keep Metadata Aligned
 
-Each release includes 6 files organized in the release assets:
+Keep these synchronized to avoid stale release notes:
+- `pyproject.toml` optional dependency names
+- README install examples
+- `.github/workflows/release.yml` generated release notes content
 
-```
-📦 Core Variant
-  - irpai-X.Y.Z-py3-none-any.whl (from dist/core/)
-  - irpai-X.Y.Z.tar.gz (from dist/core/)
+## 6. Versioning
 
-📦 Full Variant
-  - irpai-X.Y.Z-py3-none-any.whl (from dist/full/)
-  - irpai-X.Y.Z.tar.gz (from dist/full/)
-
-📦 Dev Variant
-  - irpai-X.Y.Z-py3-none-any.whl (from dist/dev/)
-  - irpai-X.Y.Z.tar.gz (from dist/dev/)
-```
-
-## Release Notes
-
-The workflow automatically generates comprehensive release notes including:
-- Installation instructions for each variant
-- Variant comparison table
-- Optional extras documentation
-- Asset descriptions
-
-## Manual Release (Optional)
-
-If you need to create a release manually:
-
-```bash
-# 1. Build all variants locally
-python build_all.py
-
-# 2. Go to GitHub > Releases > Draft a new release
-# 3. Choose a tag (or create new tag like v0.1.0)
-# 4. Upload files from:
-#    - dist/core/
-#    - dist/full/
-#    - dist/dev/
-# 5. Add release notes and publish
-```
-
-## Troubleshooting
-
-### Workflow doesn't trigger
-- Ensure tag starts with 'v' (e.g., v0.1.0, not 0.1.0)
-- Check that you pushed the tag: `git push origin v0.1.0`
-
-### Build fails
-- Verify `python build_all.py` works locally
-- Check GitHub Actions logs for details
-
-### Release creation fails
-- Ensure repository has GitHub Actions enabled
-- Verify GITHUB_TOKEN permissions (should be automatic)
-
-## Version Numbering
-
-Follow [Semantic Versioning](https://semver.org/):
-- **MAJOR.MINOR.PATCH** (e.g., 1.2.3)
-- MAJOR: Breaking changes
-- MINOR: New features, backwards compatible
-- PATCH: Bug fixes, backwards compatible
-
-Examples:
-- `v0.1.0` - Initial release
-- `v0.1.1` - Bug fix
-- `v0.1.2` - Another bug fix
-- `v1.0.0` - First stable release
+Use semantic versioning (`MAJOR.MINOR.PATCH`):
+- `v0.1.1` patch fixes
+- `v0.2.0` new backward-compatible features
+- `v1.0.0` first stable major
