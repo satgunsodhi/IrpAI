@@ -28,17 +28,20 @@ Empirical results from the built-in research framework (run on Darwin arm64, Pyt
 ## Quick Start
 
 ```bash
-# Minimal install (CPU-only fallback detection + EasyOCR)
+# Core install (preprocessing + rule-based fallback detection only)
 pip install -e .
 
-# Standard install (RT-DETR primary detector)
+# With EasyOCR support (required for text extraction)
+pip install -e ".[ocr-easyocr]"
+
+# With RT-DETR ML detection (requires torch + transformers)
 pip install -e ".[detection-ml]"
+
+# Recommended: RT-DETR + EasyOCR (full standard pipeline)
+pip install -e ".[all]"
 
 # Training extras (fine-tuning scripts + datasets)
 pip install -e ".[training]"
-
-# Full install (all optional extras)
-pip install -e ".[all]"
 ```
 
 ### Contributor Setup
@@ -54,7 +57,7 @@ python -m venv .venv
 source .venv/bin/activate
 
 # 2) Install package + dev tools
-pip install -e ".[training]"
+pip install -e ".[all,training,dev]"
 ```
 
 ---
@@ -89,8 +92,8 @@ from irpai.context.formatter import format_for_llm
 
 # Three output styles
 context = format_for_llm(pack, style="system_prompt")  # injects as system message
-context = format_for_llm(pack, style="markdown")        # human-readable
-context = format_for_llm(pack, style="json")            # structured dict
+context = format_for_llm(pack, style="markdown")        # human-readable Markdown
+context = format_for_llm(pack, style="json")            # compact JSON string
 ```
 
 ### CLI
@@ -124,9 +127,6 @@ irpai screenshot.png --tier lite --format markdown -o context.md
 │          │ Classify roles (heading/body/button/nav/…)    │
 │          │ Build hierarchy tree + reading order          │
 ├──────────────────────────────────────────────────────────┤
-│  Layer 4b│ VLM CAPTIONING (full tier only)               │
-│          │ Florence-2-base scene captioning + OD + OCR   │
-├──────────────────────────────────────────────────────────┤
 │  Layer 5 │ CONTEXT ASSEMBLY                              │
 │          │ → Structured JSON / Markdown / System prompt  │
 │          │ Token-budget enforcement, reading-order sort  │
@@ -142,7 +142,6 @@ irpai screenshot.png --tier lite --format markdown -o context.md
 |------|-------------|----------|------------|----------|
 | **lite** | Rule fallback + EasyOCR | CPU, 4 GB RAM | ~636ms | ★★☆☆ |
 | **standard** | RT-DETR + EasyOCR | CPU, 8 GB RAM | ~857ms | ★★★☆ |
-| **full** | + Florence-2 VLM | GPU 6 GB VRAM | ~1–2s | ★★★★ |
 
 Latency figures measured on Apple M-series (arm64). Lite warmup: 763ms → 636ms steady-state. Standard warmup: 2.4s → 857ms steady-state (RT-DETR model load).
 
@@ -213,7 +212,7 @@ pack.to_json(include_hierarchy=False)
 ## Project Structure
 
 ```
-irpai/
+src/irpai/
 ├── __init__.py              # Package entry point
 ├── config.py                # Tiered configuration system
 ├── pipeline.py              # Main orchestrator (5-layer pipeline)
@@ -225,7 +224,8 @@ irpai/
 │   ├── base.py              # Abstract detector interface + DetectionResult
 │   ├── hybrid_detector.py   # RT-DETR + rule-based NMS orchestrator
 │   ├── rt_detr_detector.py  # Primary ML detector (HuggingFace RT-DETR)
-│   └── rule_fallback.py     # Rule-based backup (grid + color split + contour)
+│   ├── rule_fallback.py     # Rule-based backup (grid + color split + contour)
+│   └── yolo_detector.py     # Legacy import shim (re-exports FallbackGridDetector)
 ├── ocr/
 │   ├── base.py              # Abstract OCR interface + OCRResult
 │   ├── engine.py            # Factory with priority-ordered auto-fallback
@@ -235,8 +235,8 @@ irpai/
 │   ├── analyzer.py          # Region grouping + role classification
 │   └── hierarchy.py         # Spatial containment tree builder
 ├── vlm/
-│   ├── base.py              # Abstract VLM interface
-│   └── florence.py          # Florence-2 integration (full tier)
+│   ├── base.py              # Abstract VLM interface + VLMResult
+│   └── florence.py          # Florence-2 integration (optional, not in pipeline by default)
 ├── context/
 │   ├── schema.py            # ContextPack / Region / Summary output types
 │   ├── assembler.py         # Merges all layers → structured output pack

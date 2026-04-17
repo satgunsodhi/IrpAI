@@ -159,6 +159,10 @@ Purpose:
 - include metadata (tier, detector name, timing, image size)
 - produce JSON/Markdown/system-prompt-ready formats
 
+### Optional: VLM (`irpai.vlm`)
+
+The `irpai.vlm` package contains a Florence-2 backend (`florence.py`) and an abstract base interface (`base.py`). These modules exist in the codebase but are **not wired into the active pipeline**. The VLM stage is planned roadmap work (see section 5.3 and section 9).
+
 ---
 
 ## 4. Detection Design (RT-DETR + Fallback)
@@ -222,7 +226,7 @@ Use case:
 
 ### 5.3 Planned Full Tier
 
-A future full tier can add a VLM stage after layout assembly or as an enrichment pass. This is documented as roadmap work and is not the default runtime tier in current code.
+A future full tier can add a VLM stage after layout assembly or as an enrichment pass. The `irpai.vlm` package (including a Florence-2 backend) exists in the codebase but is not wired into the default pipeline and is not exposed as an active `Tier` value. This is documented as roadmap work.
 
 ---
 
@@ -235,8 +239,7 @@ Representative structure:
   "summary": {
     "description": "...",
     "app_type": "...",
-    "key_elements": ["..."],
-    "vlm_caption": "..."
+    "key_elements": ["..."]
   },
   "regions": [
     {
