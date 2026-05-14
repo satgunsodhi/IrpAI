@@ -10,6 +10,12 @@ It extracts:
 
 The output is optimized for prompt injection and downstream automation.
 
+## Authors
+
+- **Satgun Singh Sodhi**
+- **Aakaash S S**
+- **Agrim Dev**
+
 ## Why IrpAI
 
 Raw screenshots are noisy and expensive for LLMs to parse directly. IrpAI adds a deterministic pre-processing and structure extraction layer so models receive cleaner context instead of raw pixels.
