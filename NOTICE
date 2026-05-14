@@ -1,0 +1,36 @@
+IrpAI — Image Resolution Pipeline AI
+=====================================
+
+Copyright (c) 2026 Satgun Singh Sodhi, Aakaash S S, Agrim Dev
+All Rights Reserved.
+
+Inventors
+---------
+  Satgun Singh Sodhi   — Lead Developer & Architect
+  Aakaash S S          — Co-Inventor & Developer
+  Agrim Dev            — Co-Inventor & Developer
+
+Intellectual Property Notice
+-----------------------------
+This software embodies novel methods, architectures, and techniques for
+machine vision-based screenshot understanding and structured LLM context
+generation, including but not limited to:
+
+  - A 5-stage deterministic pipeline for converting screenshots to
+    structured LLM-ready context (preprocessing → detection → OCR →
+    layout analysis → context assembly)
+  - A hybrid UI-element detector combining fine-tuned RT-DETR with a
+    rule-based fallback system
+  - A tiered runtime architecture (lite / standard) for deployment-aware
+    pipeline selection
+  - A ContextPack output schema with multi-format serialization
+    (JSON, Markdown, System Prompt) optimized for LLM injection
+
+Patent applications covering the inventions disclosed herein may be filed
+by the inventors. No license to any patent, registered or pending, is
+granted by this repository or its license.
+
+First Documented Reduction to Practice: 2026
+Repository: https://github.com/satgunsodhi/IrpAI
+
+Contact: satgunsodhi@gmail.com

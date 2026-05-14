@@ -7,16 +7,18 @@ name = "irpai"
 version = "0.1.0"
 description = "Image Resolution Pipeline AI — lightweight machine vision pipeline for screenshot understanding and LLM context generation"
 readme = "README.md"
-license = {text = "MIT"}
+license = {text = "Proprietary — All Rights Reserved"}
 requires-python = ">=3.10"
 authors = [
-    {name = "Aakaash"},
+    {name = "Satgun Singh Sodhi", email = "satgunsodhi@gmail.com"},
+    {name = "Aakaash S S"},
+    {name = "Agrim Dev"},
 ]
 keywords = ["screenshot", "ocr", "vision", "llm", "context", "pipeline", "ui-understanding"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
+    "License :: Other/Proprietary License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
@@ -60,9 +62,9 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/aakaash/irpai"
-Repository = "https://github.com/aakaash/irpai"
-Issues = "https://github.com/aakaash/irpai/issues"
+Homepage = "https://github.com/satgunsodhi/IrpAI"
+Repository = "https://github.com/satgunsodhi/IrpAI"
+Issues = "https://github.com/satgunsodhi/IrpAI/issues"
 
 [project.scripts]
 irpai = "irpai.cli:main"

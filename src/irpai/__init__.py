@@ -1,6 +1,9 @@
 """
 IrpAI — Image Resolution Pipeline AI
 
+Copyright (c) 2026 Satgun Singh Sodhi, Aakaash S S, Agrim Dev
+All Rights Reserved.
+
 A lightweight machine vision pipeline that converts screenshots into
 structured context for LLMs, enabling faster and more relevant responses
 on everyday hardware.
@@ -15,10 +18,14 @@ Architecture (5-layer pipeline):
 Tiers:
     - lite     : CPU-only, fallback detection + OCR + layout
     - standard : CPU, RT-DETR + fallback + OCR + layout analysis
+
+Inventors: Satgun Singh Sodhi, Aakaash S S, Agrim Dev
 """
 
 __version__ = "0.1.0"
-__author__ = "Aakaash"
+__authors__ = ["Satgun Singh Sodhi", "Aakaash S S", "Agrim Dev"]
+__copyright__ = "Copyright (c) 2026 Satgun Singh Sodhi, Aakaash S S, Agrim Dev"
+__license__ = "Proprietary — All Rights Reserved"
 
 from irpai.config import IrpAIConfig, Tier
 from irpai.models import (
@@ -39,6 +46,9 @@ __all__ = [
     "IrpAIConfig",
     "Tier",
     "__version__",
+    "__authors__",
+    "__copyright__",
+    "__license__",
     # Data models
     "BoundingBox",
     "UIElementType",
@@ -50,4 +60,3 @@ __all__ = [
     "StructuredContext",
     "PipelineResult",
 ]
-
