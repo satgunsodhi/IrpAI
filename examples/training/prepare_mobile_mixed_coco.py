@@ -101,10 +101,10 @@ def _load_pro_records(raw_root: Path) -> list[Record]:
     return records
 
 
-def _load_mobile_v2_records(raw_root: Path) -> list[Record]:
-    ann_file = raw_root / "screenspot_mobile_v2.json"
+def _load_v2_records(raw_root: Path, filename: str, source_name: str) -> list[Record]:
+    ann_file = raw_root / filename
     if not ann_file.exists():
-        raise FileNotFoundError(f"Missing ScreenSpot-v2 mobile annotations: {ann_file}")
+        raise FileNotFoundError(f"Missing ScreenSpot-v2 annotations: {ann_file}")
 
     with ann_file.open("r", encoding="utf-8") as f:
         items: list[dict[str, Any]] = json.load(f)
@@ -131,7 +131,7 @@ def _load_mobile_v2_records(raw_root: Path) -> list[Record]:
 
         records.append(
             Record(
-                source="mobile_v2",
+                source=source_name,
                 image_rel=image_rel,
                 ui_type=ui_type,
                 bbox=bbox,
@@ -237,7 +237,7 @@ def _bbox_to_xywh(bbox: tuple[float, float, float, float]) -> tuple[float, float
 
 
 def _xywh_from_record(rec: Record) -> tuple[float, float, float, float]:
-    if rec.source == "mobile_v2":
+    if rec.source in ("mobile_v2", "desktop_v2", "web_v2"):
         return rec.bbox
     return _bbox_to_xywh(rec.bbox)
 
@@ -330,7 +330,7 @@ def _build_split(
     skipped_mobile_missing = 0
 
     for rec in split_records:
-        if rec.source == "mobile_v2":
+        if rec.source in ("mobile_v2", "desktop_v2", "web_v2"):
             local_file = mobile_index.get(rec.image_rel)
             if local_file is None:
                 skipped_mobile_missing += 1
@@ -406,37 +406,57 @@ def main() -> None:
         local_dir=str(out_root / "raw" / "screenspot_pro"),
         allow_patterns=["annotations/*.json", "README.md", "eval.yaml"],
     )
-    hf_hub_download(
-        repo_id=V2_DATASET_ID,
-        repo_type="dataset",
-        filename="screenspot_mobile_v2.json",
-        local_dir=str(out_root / "raw" / "screenspot_v2"),
-    )
+    
+    # Download all v2 splits
+    v2_splits = {
+        "mobile_v2": "screenspot_mobile_v2.json",
+        "desktop_v2": "screenspot_desktop_v2.json",
+        "web_v2": "screenspot_web_v2.json"
+    }
+    for filename in v2_splits.values():
+        hf_hub_download(
+            repo_id=V2_DATASET_ID,
+            repo_type="dataset",
+            filename=filename,
+            local_dir=str(out_root / "raw" / "screenspot_v2"),
+        )
 
     pro_records = _load_pro_records(out_root / "raw" / "screenspot_pro")
-    mobile_records = _load_mobile_v2_records(out_root / "raw" / "screenspot_v2")
-    if not pro_records and not mobile_records:
+    
+    v2_records = []
+    for source_name, filename in v2_splits.items():
+        v2_records.extend(_load_v2_records(out_root / "raw" / "screenspot_v2", filename, source_name))
+
+    if not pro_records and not v2_records:
         raise RuntimeError("No usable records found")
 
-    sampled = _sample_mixed_records(
-        pro_records=pro_records,
-        mobile_records=mobile_records,
-        total_samples=args.total_samples,
-        mobile_min_ratio=args.mobile_min_ratio,
-        seed=args.seed,
-    )
+    if args.total_samples <= 0:
+        sampled = pro_records + v2_records
+        # Shuffle sampled records to ensure uniform distribution
+        random.Random(args.seed).shuffle(sampled)
+    else:
+        # For mixed sampling, treat all v2_records as 'mobile' or partition accordingly.
+        # Since we want mixed records, we can pass v2_records as the second list to _sample_mixed_records.
+        sampled = _sample_mixed_records(
+            pro_records=pro_records,
+            mobile_records=v2_records,
+            total_samples=args.total_samples,
+            mobile_min_ratio=args.mobile_min_ratio,
+            seed=args.seed,
+        )
+        
     train_records, val_records = _split_records(sampled, val_ratio=args.val_ratio, seed=args.seed)
 
-    needed_mobile = {r.image_rel for r in sampled if r.source == "mobile_v2"}
-    mobile_index = _ensure_mobile_v2_images(out_root, needed_names=needed_mobile)
+    needed_v2 = {r.image_rel for r in sampled if r.source in v2_splits}
+    mobile_index = _ensure_mobile_v2_images(out_root, needed_names=needed_v2)
 
     _build_split("train", train_records, out_root, mobile_index=mobile_index)
     _build_split("val", val_records, out_root, mobile_index=mobile_index)
 
-    mobile_count = sum(1 for r in sampled if r.source == "mobile_v2")
+    v2_count = sum(1 for r in sampled if r.source in v2_splits)
     print(
         f"done: total={len(sampled)} train={len(train_records)} val={len(val_records)} "
-        f"mobile={mobile_count}"
+        f"v2={v2_count}"
     )
 
 
