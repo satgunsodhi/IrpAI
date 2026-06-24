@@ -50,9 +50,7 @@ class PromptBuilder:
         else:
             return self._build_direct_prompt(user_query, context)
 
-    def _build_direct_prompt(
-        self, user_query: str, context: StructuredContext
-    ) -> str:
+    def _build_direct_prompt(self, user_query: str, context: StructuredContext) -> str:
         """
         Build prompt using direct context injection.
 
@@ -65,12 +63,8 @@ class PromptBuilder:
         spatial_summary = ""
         if context.spatial_relationships:
             rels = context.spatial_relationships[:10]
-            spatial_lines = [
-                f"  - {r.subject} is {r.relation} {r.obj}" for r in rels
-            ]
-            spatial_summary = (
-                "\nSPATIAL RELATIONSHIPS:\n" + "\n".join(spatial_lines)
-            )
+            spatial_lines = [f"  - {r.subject} is {r.relation} {r.obj}" for r in rels]
+            spatial_summary = "\nSPATIAL RELATIONSHIPS:\n" + "\n".join(spatial_lines)
 
         # Truncate all_text to fit token budget
         max_text = self.config.max_context_tokens * 3  # rough chars-to-tokens
@@ -129,9 +123,7 @@ Please provide a detailed, helpful response based on the screenshot context abov
 
         return "\n".join(lines) if lines else "No layout regions detected"
 
-    def _build_embedding_prompt(
-        self, user_query: str, context: StructuredContext
-    ) -> str:
+    def _build_embedding_prompt(self, user_query: str, context: StructuredContext) -> str:
         """
         Build prompt using embedding-based retrieval.
 
@@ -385,9 +377,7 @@ class LLMInterface:
 
             api_key = os.environ.get("ANTHROPIC_API_KEY")
             if not api_key:
-                raise ValueError(
-                    "API key not found. Set ANTHROPIC_API_KEY environment variable."
-                )
+                raise ValueError("API key not found. Set ANTHROPIC_API_KEY environment variable.")
 
             client = anthropic.Anthropic(api_key=api_key)
             response = client.messages.create(
@@ -408,13 +398,10 @@ class LLMInterface:
             return llm.invoke(prompt)
         except ImportError:
             raise ImportError(
-                "langchain-community not installed. "
-                "Install with: pip install langchain-community"
+                "langchain-community not installed. Install with: pip install langchain-community"
             )
 
-    def _generate_fallback_response(
-        self, user_query: str, context: StructuredContext
-    ) -> str:
+    def _generate_fallback_response(self, user_query: str, context: StructuredContext) -> str:
         """Generate a basic response without LLM when API is unavailable."""
         summary = context.to_summary()
         return (

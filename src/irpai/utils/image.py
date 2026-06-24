@@ -22,6 +22,7 @@ BBox = tuple[int, int, int, int]  # (x1, y1, x2, y2)
 
 # -- Loading ----------------------------------------------------------------
 
+
 def load_image(source: str | Path | Image.Image | np.ndarray) -> Image.Image:
     """
     Normalise any common image source into a PIL ``Image`` in RGB mode.
@@ -45,6 +46,7 @@ def load_image(source: str | Path | Image.Image | np.ndarray) -> Image.Image:
 
 # -- Conversion -------------------------------------------------------------
 
+
 def pil_to_cv2(img: Image.Image) -> np.ndarray:
     """Convert a PIL RGB image to an OpenCV BGR ``ndarray``."""
     rgb = np.array(img)
@@ -58,6 +60,7 @@ def cv2_to_pil(arr: np.ndarray) -> Image.Image:
 
 
 # -- Cropping ---------------------------------------------------------------
+
 
 def crop_region(
     img: Image.Image | np.ndarray,

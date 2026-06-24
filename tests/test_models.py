@@ -24,6 +24,7 @@ from irpai.models import (
 # BoundingBox
 # ---------------------------------------------------------------------------
 
+
 class TestBoundingBox:
     def test_creation(self) -> None:
         bb = BoundingBox(x1=10, y1=20, x2=110, y2=70)
@@ -106,6 +107,7 @@ class TestBoundingBox:
 # UIElementType
 # ---------------------------------------------------------------------------
 
+
 class TestUIElementType:
     def test_button_value(self) -> None:
         assert UIElementType.BUTTON.value == "button"
@@ -121,6 +123,7 @@ class TestUIElementType:
 # ---------------------------------------------------------------------------
 # UIDetection
 # ---------------------------------------------------------------------------
+
 
 class TestUIDetection:
     def test_creation(self) -> None:
@@ -168,6 +171,7 @@ class TestUIDetection:
 # TextExtraction
 # ---------------------------------------------------------------------------
 
+
 class TestTextExtraction:
     def test_creation(self) -> None:
         te = TextExtraction(
@@ -208,6 +212,7 @@ class TestTextExtraction:
 # SpatialRelationship
 # ---------------------------------------------------------------------------
 
+
 class TestSpatialRelationship:
     def test_creation(self) -> None:
         rel = SpatialRelationship(
@@ -229,6 +234,7 @@ class TestSpatialRelationship:
 # LayoutStructure
 # ---------------------------------------------------------------------------
 
+
 class TestLayoutStructure:
     def test_empty(self) -> None:
         layout = LayoutStructure()
@@ -248,6 +254,7 @@ class TestLayoutStructure:
 # ---------------------------------------------------------------------------
 # StructuredContext
 # ---------------------------------------------------------------------------
+
 
 class TestStructuredContext:
     def test_default(self) -> None:
@@ -311,6 +318,7 @@ class TestStructuredContext:
 # PipelineResult
 # ---------------------------------------------------------------------------
 
+
 class TestPipelineResult:
     def test_creation(self) -> None:
         ctx = StructuredContext(platform="web_browser", app_title="Google Chrome")
@@ -332,7 +340,9 @@ class TestPipelineResult:
             regions=[Region(role="body", text="Hello")],
         )
         result = PipelineResult.from_context_pack(
-            pack, processing_time_ms=100.0, confidence=0.9,
+            pack,
+            processing_time_ms=100.0,
+            confidence=0.9,
         )
         assert result.processing_time_ms == 100.0
         assert result.structured_context.ui_detections[0].text == "Hello"

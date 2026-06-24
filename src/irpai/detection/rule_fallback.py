@@ -83,21 +83,26 @@ class FallbackGridDetector(BaseDetector):
         elapsed_ms = (time.perf_counter() - t0) * 1000
 
         if not all_dets:
-            all_dets.append(DetectionResult(
-                label="content_area",
-                bbox=(0, 0, w, h),
-                confidence=1.0,
-                meta={"source": "full_image"},
-            ))
+            all_dets.append(
+                DetectionResult(
+                    label="content_area",
+                    bbox=(0, 0, w, h),
+                    confidence=1.0,
+                    meta={"source": "full_image"},
+                )
+            )
 
         log.info(
             "Detection: %d regions in %.1f ms (structural=%d, contour=%d, text=%d)",
-            len(all_dets), elapsed_ms,
-            len(structural), len(contour_dets), len(text_dets),
+            len(all_dets),
+            elapsed_ms,
+            len(structural),
+            len(contour_dets),
+            len(text_dets),
         )
 
         return DetectionOutput(
-            detections=all_dets[:self.max_detections],
+            detections=all_dets[: self.max_detections],
             image_size=(w, h),
             model_name=self.name,
             inference_ms=round(elapsed_ms, 1),
@@ -108,7 +113,10 @@ class FallbackGridDetector(BaseDetector):
     # ══════════════════════════════════════════════════════════════════════
 
     def _find_ui_regions(
-        self, arr: np.ndarray, w: int, h: int,
+        self,
+        arr: np.ndarray,
+        w: int,
+        h: int,
     ) -> list[DetectionResult]:
         """Detect structural UI regions via colour-band analysis."""
         detections: list[DetectionResult] = []
@@ -128,17 +136,22 @@ class FallbackGridDetector(BaseDetector):
                     continue
 
                 label = self._classify_structural_region(x1, y1, x2, y2, w, h)
-                detections.append(DetectionResult(
-                    label=label,
-                    bbox=(x1, y1, x2, y2),
-                    confidence=1.0,
-                    meta={"source": "color_split"},
-                ))
+                detections.append(
+                    DetectionResult(
+                        label=label,
+                        bbox=(x1, y1, x2, y2),
+                        confidence=1.0,
+                        meta={"source": "color_split"},
+                    )
+                )
 
         return detections
 
     def _find_horizontal_splits(
-        self, arr: np.ndarray, w: int, h: int,
+        self,
+        arr: np.ndarray,
+        w: int,
+        h: int,
     ) -> list[int]:
         """Find y-positions where the full-width colour changes sharply."""
         band = 4
@@ -164,7 +177,10 @@ class FallbackGridDetector(BaseDetector):
         return splits
 
     def _find_vertical_splits(
-        self, arr: np.ndarray, w: int, h: int,
+        self,
+        arr: np.ndarray,
+        w: int,
+        h: int,
     ) -> list[int]:
         """Find x-positions where the full-height colour changes sharply."""
         band = 4
@@ -197,7 +213,12 @@ class FallbackGridDetector(BaseDetector):
 
     @staticmethod
     def _classify_structural_region(
-        x1: int, y1: int, x2: int, y2: int, w: int, h: int,
+        x1: int,
+        y1: int,
+        x2: int,
+        y2: int,
+        w: int,
+        h: int,
     ) -> str:
         """Heuristic label based on position and aspect ratio."""
         rw = x2 - x1
@@ -219,14 +240,21 @@ class FallbackGridDetector(BaseDetector):
     # ══════════════════════════════════════════════════════════════════════
 
     def _detect_rectangles(
-        self, gray: np.ndarray, h: int, w: int,
+        self,
+        gray: np.ndarray,
+        h: int,
+        w: int,
     ) -> list[DetectionResult]:
         """Detect rectangular UI elements via adaptive thresholding + contour analysis."""
         detections: list[DetectionResult] = []
 
         binary = cv2.adaptiveThreshold(
-            gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-            cv2.THRESH_BINARY_INV, 11, 2,
+            gray,
+            255,
+            cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+            cv2.THRESH_BINARY_INV,
+            11,
+            2,
         )
 
         kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
@@ -234,8 +262,8 @@ class FallbackGridDetector(BaseDetector):
 
         contours, _ = cv2.findContours(binary, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
-        min_area = (h * w) * 0.0005   # 0.05 % of image
-        max_area = (h * w) * 0.8      # 80 % of image
+        min_area = (h * w) * 0.0005  # 0.05 % of image
+        max_area = (h * w) * 0.8  # 80 % of image
 
         for contour in contours:
             area = cv2.contourArea(contour)
@@ -250,18 +278,24 @@ class FallbackGridDetector(BaseDetector):
                 aspect_ratio = bw / max(bh, 1)
                 label = self._classify_rectangle(bw, bh, aspect_ratio, w, h)
 
-                detections.append(DetectionResult(
-                    label=label,
-                    bbox=(x, y, x + bw, y + bh),
-                    confidence=0.6,
-                    meta={"source": "contour"},
-                ))
+                detections.append(
+                    DetectionResult(
+                        label=label,
+                        bbox=(x, y, x + bw, y + bh),
+                        confidence=0.6,
+                        meta={"source": "contour"},
+                    )
+                )
 
         return detections
 
     @staticmethod
     def _classify_rectangle(
-        bw: int, bh: int, aspect_ratio: float, img_w: int, img_h: int,
+        bw: int,
+        bh: int,
+        aspect_ratio: float,
+        img_w: int,
+        img_h: int,
     ) -> str:
         """Classify a rectangular contour based on size and aspect ratio."""
         rel_w = bw / img_w
@@ -293,7 +327,10 @@ class FallbackGridDetector(BaseDetector):
     # ══════════════════════════════════════════════════════════════════════
 
     def _detect_text_regions(
-        self, gray: np.ndarray, h: int, w: int,
+        self,
+        gray: np.ndarray,
+        h: int,
+        w: int,
     ) -> list[DetectionResult]:
         """Detect text-heavy regions using connected-components analysis."""
         detections: list[DetectionResult] = []
@@ -306,7 +343,8 @@ class FallbackGridDetector(BaseDetector):
         dilated = cv2.dilate(dilated, kernel_v, iterations=1)
 
         num_labels, _labels, stats, _centroids = cv2.connectedComponentsWithStats(
-            dilated, connectivity=8,
+            dilated,
+            connectivity=8,
         )
 
         bboxes: list[list[int]] = []
@@ -330,24 +368,28 @@ class FallbackGridDetector(BaseDetector):
 
         for block in text_blocks:
             x1, y1, x2, y2 = block
-            detections.append(DetectionResult(
-                label="text_block",
-                bbox=(x1, y1, x2, y2),
-                confidence=0.5,
-                meta={"source": "text_cluster"},
-            ))
+            detections.append(
+                DetectionResult(
+                    label="text_block",
+                    bbox=(x1, y1, x2, y2),
+                    confidence=0.5,
+                    meta={"source": "text_cluster"},
+                )
+            )
 
         return detections
 
     @staticmethod
     def _cluster_text_regions(
-        bboxes: list[list[int]], h: int, w: int,
+        bboxes: list[list[int]],
+        h: int,
+        w: int,
     ) -> list[list[int]]:
         """Cluster nearby text bounding boxes into text-block regions."""
         bboxes_arr = np.array(bboxes)
 
-        merge_dist_x = w * 0.05   # 5 % of image width
-        merge_dist_y = h * 0.02   # 2 % of image height
+        merge_dist_x = w * 0.05  # 5 % of image width
+        merge_dist_y = h * 0.02  # 2 % of image height
 
         clusters: list[list[int]] = []
         used: set[int] = set()
@@ -417,6 +459,7 @@ class FallbackGridDetector(BaseDetector):
 
 
 # ─── helpers ──────────────────────────────────────────────────────────────
+
 
 def _compute_iou(
     a: tuple[int, int, int, int],

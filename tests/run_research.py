@@ -50,48 +50,60 @@ def main() -> None:
     print("▸ [1/6] Running cost analysis benchmark...")
     t0 = time.perf_counter()
     cost_results = run_cost_benchmark()
-    print(f"  ✓ Cost analysis complete ({(time.perf_counter() - t0):.1f}s) "
-          f"— {len(cost_results.tier_results)} tier×scene results")
+    print(
+        f"  ✓ Cost analysis complete ({(time.perf_counter() - t0):.1f}s) "
+        f"— {len(cost_results.tier_results)} tier×scene results"
+    )
     print()
 
     # 2. Data Efficiency
     print("▸ [2/6] Running data efficiency benchmark...")
     t0 = time.perf_counter()
     data_eff_results = run_data_efficiency_benchmark()
-    print(f"  ✓ Data efficiency complete ({(time.perf_counter() - t0):.1f}s) "
-          f"— {len(data_eff_results.results)} degradation tests")
+    print(
+        f"  ✓ Data efficiency complete ({(time.perf_counter() - t0):.1f}s) "
+        f"— {len(data_eff_results.results)} degradation tests"
+    )
     print()
 
     # 3. Accuracy
     print("▸ [3/6] Running accuracy benchmark...")
     t0 = time.perf_counter()
     accuracy_results = run_accuracy_benchmark()
-    print(f"  ✓ Accuracy complete ({(time.perf_counter() - t0):.1f}s) "
-          f"— {len(accuracy_results.scene_results)} scene results")
+    print(
+        f"  ✓ Accuracy complete ({(time.perf_counter() - t0):.1f}s) "
+        f"— {len(accuracy_results.scene_results)} scene results"
+    )
     print()
 
     # 4. Latency
     print("▸ [4/6] Running latency profiling benchmark...")
     t0 = time.perf_counter()
     latency_results = run_latency_benchmark()
-    print(f"  ✓ Latency profiling complete ({(time.perf_counter() - t0):.1f}s) "
-          f"— {len(latency_results)} tier profiles")
+    print(
+        f"  ✓ Latency profiling complete ({(time.perf_counter() - t0):.1f}s) "
+        f"— {len(latency_results)} tier profiles"
+    )
     print()
 
     # 5. Token Savings
     print("▸ [5/6] Running token savings benchmark...")
     t0 = time.perf_counter()
     token_results = run_token_savings_benchmark()
-    print(f"  ✓ Token savings complete ({(time.perf_counter() - t0):.1f}s) "
-          f"— {len(token_results.scene_results)} scene analyses")
+    print(
+        f"  ✓ Token savings complete ({(time.perf_counter() - t0):.1f}s) "
+        f"— {len(token_results.scene_results)} scene analyses"
+    )
     print()
 
     # 6. Privacy
     print("▸ [6/6] Running privacy benchmark...")
     t0 = time.perf_counter()
     privacy_results = run_privacy_benchmark()
-    print(f"  ✓ Privacy benchmark complete ({(time.perf_counter() - t0):.1f}s) "
-          f"— {privacy_results.total_test_cases} test cases")
+    print(
+        f"  ✓ Privacy benchmark complete ({(time.perf_counter() - t0):.1f}s) "
+        f"— {privacy_results.total_test_cases} test cases"
+    )
     print()
 
     # Generate report

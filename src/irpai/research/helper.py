@@ -110,9 +110,7 @@ class ResearchHelper:
 
         # App-specific headings
         headings = [
-            r.text.strip()
-            for r in pack.regions
-            if r.role == "heading" and len(r.text.strip()) > 5
+            r.text.strip() for r in pack.regions if r.role == "heading" and len(r.text.strip()) > 5
         ]
         queries.extend(headings[:2])
 

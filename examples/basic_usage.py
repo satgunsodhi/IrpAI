@@ -81,8 +81,8 @@ def _create_demo_image(path: Path) -> None:
             "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf",
             "/usr/share/fonts/truetype/liberation/LiberationMono-Regular.ttf",
             # Windows
-            "C:/Windows/Fonts/consola.ttf",
-            "C:/Windows/Fonts/arial.ttf",
+            "consola.ttf",
+            "arial.ttf",
         ]
         for fp in candidates:
             try:

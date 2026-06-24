@@ -40,7 +40,7 @@ def format_for_llm(
         text = pack.to_json(compact=True)
 
     if max_chars and len(text) > max_chars:
-        text = text[:max_chars - 20] + "\n[context truncated]"
+        text = text[: max_chars - 20] + "\n[context truncated]"
 
     return text
 

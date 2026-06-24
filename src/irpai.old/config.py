@@ -53,9 +53,7 @@ class VisionConfig(BaseModel):
     model_name: str = Field(
         default="fasterrcnn_resnet50_fpn", description="Detection model architecture"
     )
-    confidence_threshold: float = Field(
-        default=0.5, description="Minimum detection confidence"
-    )
+    confidence_threshold: float = Field(default=0.5, description="Minimum detection confidence")
     nms_threshold: float = Field(default=0.3, description="Non-maximum suppression IoU threshold")
     max_detections: int = Field(default=100, description="Maximum detections per image")
     use_quantized: bool = Field(default=False, description="Use INT8 quantized model")
@@ -90,15 +88,13 @@ class VisionConfig(BaseModel):
 class OCRConfig(BaseModel):
     """Configuration for the text branch (OCR engine)."""
 
-    engine: str = Field(default="paddleocr", description="OCR engine: paddleocr, easyocr, tesseract")
+    engine: str = Field(
+        default="paddleocr", description="OCR engine: paddleocr, easyocr, tesseract"
+    )
     language: str = Field(default="en", description="Primary OCR language")
-    confidence_threshold: float = Field(
-        default=0.6, description="Minimum OCR confidence threshold"
-    )
+    confidence_threshold: float = Field(default=0.6, description="Minimum OCR confidence threshold")
     use_angle_cls: bool = Field(default=True, description="Enable text orientation classification")
-    use_selective_ocr: bool = Field(
-        default=True, description="Only OCR text-containing UI regions"
-    )
+    use_selective_ocr: bool = Field(default=True, description="Only OCR text-containing UI regions")
     enable_ensemble: bool = Field(
         default=False, description="Use multi-OCR ensemble (slower, more accurate)"
     )
@@ -108,9 +104,7 @@ class OCRConfig(BaseModel):
 class FusionConfig(BaseModel):
     """Configuration for the fusion and structuring module."""
 
-    navbar_threshold: float = Field(
-        default=0.10, description="Top % of screen considered navbar"
-    )
+    navbar_threshold: float = Field(default=0.10, description="Top % of screen considered navbar")
     footer_threshold: float = Field(
         default=0.90, description="Bottom % of screen considered footer"
     )
@@ -144,12 +138,8 @@ class LLMConfig(BaseModel):
     max_elements_per_region: int = Field(
         default=10, description="Max UI elements to include per layout region"
     )
-    embedding_model: str = Field(
-        default="all-MiniLM-L6-v2", description="Sentence embedding model"
-    )
-    embedding_top_k: int = Field(
-        default=5, description="Top-K elements for embedding retrieval"
-    )
+    embedding_model: str = Field(default="all-MiniLM-L6-v2", description="Sentence embedding model")
+    embedding_top_k: int = Field(default=5, description="Top-K elements for embedding retrieval")
     llm_provider: str = Field(
         default="openai", description="LLM provider: openai, local, anthropic"
     )
@@ -178,15 +168,14 @@ class PipelineConfig(BaseModel):
     cache_max_size: int = Field(default=100, description="Maximum cached screenshots")
     enable_async: bool = Field(default=True, description="Run vision/text branches in parallel")
     verbose: bool = Field(default=False, description="Verbose logging")
-    output_dir: Optional[str] = Field(
-        default=None, description="Directory for output files"
-    )
+    output_dir: Optional[str] = Field(default=None, description="Directory for output files")
 
     @property
     def resolved_device(self) -> str:
         if self.device == DeviceType.AUTO:
             try:
                 import torch
+
                 return "cuda" if torch.cuda.is_available() else "cpu"
             except ImportError:
                 return "cpu"

@@ -45,7 +45,8 @@ def main(argv: list[str] | None = None) -> None:
         help="Output format (default: json).",
     )
     parser.add_argument(
-        "--output", "-o",
+        "--output",
+        "-o",
         type=Path,
         default=None,
         help="Write output to file instead of stdout.",
@@ -62,7 +63,8 @@ def main(argv: list[str] | None = None) -> None:
         help="Pretty-print JSON output.",
     )
     parser.add_argument(
-        "--verbose", "-v",
+        "--verbose",
+        "-v",
         action="store_true",
         help="Enable verbose logging.",
     )
@@ -85,6 +87,7 @@ def main(argv: list[str] | None = None) -> None:
 
     # Override output settings
     from irpai.config import OutputConfig
+
     config.output = OutputConfig(
         format=args.output_format if args.output_format != "system_prompt" else "json",
         compact=not args.pretty,
@@ -97,6 +100,7 @@ def main(argv: list[str] | None = None) -> None:
 
     # Format output
     from irpai.context.formatter import format_for_llm
+
     output = format_for_llm(pack, style=args.output_format)
 
     if args.pretty and args.output_format == "json":

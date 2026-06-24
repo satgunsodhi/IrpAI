@@ -103,8 +103,7 @@ def llm_injection_example() -> None:
             "role": "system",
             "content": (
                 "You are a helpful assistant.  The user has shared a screenshot.  "
-                "Here is the structured context extracted from it:\n\n"
-                + context
+                "Here is the structured context extracted from it:\n\n" + context
             ),
         },
         {
@@ -143,7 +142,13 @@ def token_budget_example() -> None:
 
 def step_by_step_example() -> None:
     """Show how to run individual layers for debugging or custom orchestration."""
-    from irpai.config import PreprocessingConfig, OCRConfig, DetectionConfig, LayoutConfig, OutputConfig
+    from irpai.config import (
+        PreprocessingConfig,
+        OCRConfig,
+        DetectionConfig,
+        LayoutConfig,
+        OutputConfig,
+    )
     from irpai.preprocessing.normalizer import Normalizer
     from irpai.ocr.engine import create_ocr_engine
     from irpai.detection.hybrid_detector import HybridDetector
@@ -173,7 +178,9 @@ def step_by_step_example() -> None:
 
     # Step 5: Assemble
     assembler = ContextAssembler(OutputConfig())
-    metadata = PipelineMetadata(tier="lite", ocr_engine=ocr_engine.name, detection_model=detector.name)
+    metadata = PipelineMetadata(
+        tier="lite", ocr_engine=ocr_engine.name, detection_model=detector.name
+    )
     pack = assembler.assemble(layout, ocr=ocr_result, detections=detections, metadata=metadata)
     print(f"Context pack: {pack.token_estimate()} tokens")
     print(pack.to_json(compact=False))

@@ -381,9 +381,7 @@ class SpatialRelationshipDetector:
         return relationships
 
     @staticmethod
-    def _compute_relation(
-        a: UIDetection, b: UIDetection
-    ) -> Optional[SpatialRelationship]:
+    def _compute_relation(a: UIDetection, b: UIDetection) -> Optional[SpatialRelationship]:
         """Compute the spatial relationship between two elements."""
         a_cx, a_cy = a.bbox.center
         b_cx, b_cy = b.bbox.center
@@ -396,19 +394,13 @@ class SpatialRelationshipDetector:
         iou = a.bbox.iou(b.bbox)
         if iou > 0.8:
             if a.bbox.area > b.bbox.area:
-                return SpatialRelationship(
-                    subject=b_label, relation="inside", obj=a_label
-                )
+                return SpatialRelationship(subject=b_label, relation="inside", obj=a_label)
             else:
-                return SpatialRelationship(
-                    subject=a_label, relation="inside", obj=b_label
-                )
+                return SpatialRelationship(subject=a_label, relation="inside", obj=b_label)
 
         # Check overlap
         if iou > 0.1:
-            return SpatialRelationship(
-                subject=a_label, relation="overlaps", obj=b_label
-            )
+            return SpatialRelationship(subject=a_label, relation="overlaps", obj=b_label)
 
         # Directional relationships
         dx = b_cx - a_cx
@@ -417,9 +409,7 @@ class SpatialRelationshipDetector:
         distance = (dx**2 + dy**2) ** 0.5
 
         # Only report close relationships
-        img_diag = (
-            (max(a.bbox.x2, b.bbox.x2)) ** 2 + (max(a.bbox.y2, b.bbox.y2)) ** 2
-        ) ** 0.5
+        img_diag = ((max(a.bbox.x2, b.bbox.x2)) ** 2 + (max(a.bbox.y2, b.bbox.y2)) ** 2) ** 0.5
         if distance > img_diag * 0.5:
             return None
 
@@ -504,9 +494,7 @@ class FusionModule:
             )
 
         # Step 5: Build complete text
-        all_text = " ".join(
-            ext.text for ext in text_extractions if ext.text.strip()
-        )
+        all_text = " ".join(ext.text for ext in text_extractions if ext.text.strip())
 
         # Step 6: Context-aware post-processing
         layout = self._post_process(layout)
@@ -556,11 +544,7 @@ class FusionModule:
         for region_name in ["navbar", "sidebar", "main_content", "footer", "modal"]:
             elements = getattr(layout, region_name)
             for elem in elements:
-                if (
-                    elem.element_type == UIElementType.BUTTON
-                    and elem.text
-                    and len(elem.text) > 50
-                ):
+                if elem.element_type == UIElementType.BUTTON and elem.text and len(elem.text) > 50:
                     elem.element_type = UIElementType.TEXT_BLOCK
 
         # Rule 2: Sort navbar left-to-right

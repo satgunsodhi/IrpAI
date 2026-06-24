@@ -21,9 +21,11 @@ from irpai.utils.pii import detect_pii, redact_text
 # Result types
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class PIICategoryResult:
     """Results for a single PII category."""
+
     pii_type: str
     true_positives: int = 0
     false_negatives: int = 0
@@ -52,26 +54,21 @@ PII_TEST_CASES: list[tuple[str, list[str]]] = [
     ("Contact alice@example.com for support", ["email"]),
     ("Send to user.name@company.co.uk", ["email"]),
     ("Email john.doe123@gmail.com", ["email"]),
-
     # Phone numbers
     ("Call 555-123-4567 for info", ["phone"]),
     ("Phone: 800.555.1234", ["phone"]),
     ("Reach us at 5551234567", ["phone"]),
-
     # SSN
     ("SSN: 123-45-6789", ["ssn"]),
     ("Social: 987-65-4321", ["ssn"]),
-
     # Credit cards
     ("Card: 4111-1111-1111-1111", ["credit_card"]),
     ("CC 4111 1111 1111 1111", ["credit_card"]),
     ("Pay with 5500000000000004", ["credit_card"]),
-
     # IP addresses
     ("Server at 192.168.1.1", ["ip_address"]),
     ("Connect to 10.0.0.255", ["ip_address"]),
     ("DNS: 8.8.8.8", ["ip_address"]),
-
     # Multiple PII in one string
     (
         "User john@corp.com logged in from 10.0.0.1, phone 555-000-1234",
@@ -81,7 +78,6 @@ PII_TEST_CASES: list[tuple[str, list[str]]] = [
         "SSN 123-45-6789, card 4111-1111-1111-1111",
         ["ssn", "credit_card"],
     ),
-
     # No PII (should produce no detections)
     ("The weather is nice today", []),
     ("IrpAI pipeline completed in 287ms", []),
@@ -93,6 +89,7 @@ PII_TEST_CASES: list[tuple[str, list[str]]] = [
 # ---------------------------------------------------------------------------
 # Benchmark runner
 # ---------------------------------------------------------------------------
+
 
 def run_privacy_benchmark() -> PrivacyBenchmarkResults:
     """Execute the privacy/PII benchmark."""
@@ -166,11 +163,7 @@ def run_privacy_benchmark() -> PrivacyBenchmarkResults:
     total_detected = total_tp + total_fp
     results.overall_precision = round(total_tp / max(total_detected, 1), 3)
     results.overall_recall = round(total_tp / max(total_tp + total_fn, 1), 3)
-    results.redaction_completeness = round(
-        redaction_passes / max(redaction_total, 1), 3
-    )
-    results.false_positive_rate = round(
-        non_pii_flagged / max(total_non_pii, 1), 3
-    )
+    results.redaction_completeness = round(redaction_passes / max(redaction_total, 1), 3)
+    results.false_positive_rate = round(non_pii_flagged / max(total_non_pii, 1), 3)
 
     return results

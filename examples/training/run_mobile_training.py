@@ -20,7 +20,9 @@ DEFAULT_RTDETR_HF_MODEL_ID = "PekingU/rtdetr_r18vd_coco_o365"
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run mobile-mixed data prep + RT-DETR training")
     parser.add_argument("--python", default=sys.executable, help="Python executable to use")
-    parser.add_argument("--output-root", type=Path, default=Path("data/screenspot_mobile_mixed_coco"))
+    parser.add_argument(
+        "--output-root", type=Path, default=Path("data/screenspot_mobile_mixed_coco")
+    )
     parser.add_argument(
         "--checkpoint-dir",
         type=Path,
@@ -66,7 +68,9 @@ def _run(command: list[str]) -> None:
     subprocess.run(command, check=True)
 
 
-def _export_best_checkpoint_zip(best_checkpoint_dir: Path, export_dir: Path, checkpoint_dir: Path) -> Path:
+def _export_best_checkpoint_zip(
+    best_checkpoint_dir: Path, export_dir: Path, checkpoint_dir: Path
+) -> Path:
     if not best_checkpoint_dir.exists():
         raise FileNotFoundError(f"Missing checkpoint directory: {best_checkpoint_dir}")
 
@@ -144,7 +148,9 @@ def main() -> None:
 
     best_checkpoint_dir = checkpoint_dir / "checkpoint-best"
     if args.export_best_zip:
-        archive_path = _export_best_checkpoint_zip(best_checkpoint_dir, args.export_dir, checkpoint_dir)
+        archive_path = _export_best_checkpoint_zip(
+            best_checkpoint_dir, args.export_dir, checkpoint_dir
+        )
         size_mb = archive_path.stat().st_size / (1024 * 1024)
         print(f"\nExported best checkpoint zip: {archive_path} ({size_mb:.1f} MB)")
 

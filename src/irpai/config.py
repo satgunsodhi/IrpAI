@@ -27,7 +27,10 @@ class Tier(str, enum.Enum):
 
 DEFAULT_RTDETR_HF_MODEL_ID = "PekingU/rtdetr_r18vd_coco_o365"
 LOCAL_RTDETR_CHECKPOINT = (
-    Path(__file__).resolve().parents[2] / "checkpoints" / "rtdetr-ui-mobile-mixed-complete" / "checkpoint-best"
+    Path(__file__).resolve().parents[2]
+    / "checkpoints"
+    / "rtdetr-ui-mobile-mixed-complete"
+    / "checkpoint-best"
 )
 
 
@@ -40,6 +43,7 @@ def _default_detection_model_id() -> str:
 # ---------------------------------------------------------------------------
 # Per-layer configs
 # ---------------------------------------------------------------------------
+
 
 @dataclass(frozen=True)
 class PreprocessingConfig:
@@ -160,6 +164,7 @@ class OutputConfig:
 # Master config
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class IrpAIConfig:
     """
@@ -190,23 +195,39 @@ class IrpAIConfig:
     def _apply_tier_defaults(self) -> None:
         """Override sub-configs to match the selected tier."""
         if self.tier == Tier.LITE:
-            object.__setattr__(self, "detection", DetectionConfig(
-                use_ml=False,
-                structural_boost=True,
-                device="cpu",
-            ))
-            object.__setattr__(self, "ocr", OCRConfig(
-                engine="easyocr",
-                use_gpu=False,
-            ))
+            object.__setattr__(
+                self,
+                "detection",
+                DetectionConfig(
+                    use_ml=False,
+                    structural_boost=True,
+                    device="cpu",
+                ),
+            )
+            object.__setattr__(
+                self,
+                "ocr",
+                OCRConfig(
+                    engine="easyocr",
+                    use_gpu=False,
+                ),
+            )
 
         elif self.tier == Tier.STANDARD:
-            object.__setattr__(self, "detection", DetectionConfig(
-                use_ml=True,
-                structural_boost=True,
-                device="cpu",
-            ))
-            object.__setattr__(self, "ocr", OCRConfig(
-                engine="easyocr",
-                use_gpu=False,
-            ))
+            object.__setattr__(
+                self,
+                "detection",
+                DetectionConfig(
+                    use_ml=True,
+                    structural_boost=True,
+                    device="cpu",
+                ),
+            )
+            object.__setattr__(
+                self,
+                "ocr",
+                OCRConfig(
+                    engine="easyocr",
+                    use_gpu=False,
+                ),
+            )

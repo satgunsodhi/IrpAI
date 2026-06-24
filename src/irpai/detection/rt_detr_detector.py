@@ -85,7 +85,9 @@ class RTDETRDetector(BaseDetector):
 
         assert loaded_from is not None
         if loaded_from != self.model_id:
-            log.warning("Using RT-DETR fallback model: %s (requested: %s)", loaded_from, self.model_id)
+            log.warning(
+                "Using RT-DETR fallback model: %s (requested: %s)", loaded_from, self.model_id
+            )
             self.model_id = loaded_from
 
         self._model.to(resolved_device)
@@ -114,7 +116,9 @@ class RTDETRDetector(BaseDetector):
 
         detections: list[DetectionResult] = []
         for score, label_id, box in zip(
-            results["scores"], results["labels"], results["boxes"],
+            results["scores"],
+            results["labels"],
+            results["boxes"],
         ):
             x1, y1, x2, y2 = (int(v) for v in box.tolist())
             x1 = max(0, min(x1, w - 1))

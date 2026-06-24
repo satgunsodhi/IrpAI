@@ -49,18 +49,14 @@ def analyze(
     query: Optional[str] = typer.Option(
         None, "--query", "-q", help="Question about the screenshot"
     ),
-    config: Optional[str] = typer.Option(
-        None, "--config", "-c", help="Path to config JSON file"
-    ),
+    config: Optional[str] = typer.Option(None, "--config", "-c", help="Path to config JSON file"),
     output: Optional[str] = typer.Option(
         None, "--output", "-o", help="Save structured context to JSON file"
     ),
     visualize: Optional[str] = typer.Option(
         None, "--visualize", "-v", help="Save annotated image to file"
     ),
-    no_llm: bool = typer.Option(
-        False, "--no-llm", help="Skip LLM response generation"
-    ),
+    no_llm: bool = typer.Option(False, "--no-llm", help="Skip LLM response generation"),
     verbose: bool = typer.Option(False, "--verbose", help="Enable verbose logging"),
 ):
     """
@@ -122,9 +118,7 @@ def batch(
     query: Optional[str] = typer.Option(
         None, "--query", "-q", help="Apply same query to all screenshots"
     ),
-    config: Optional[str] = typer.Option(
-        None, "--config", "-c", help="Path to config JSON file"
-    ),
+    config: Optional[str] = typer.Option(None, "--config", "-c", help="Path to config JSON file"),
     verbose: bool = typer.Option(False, "--verbose", help="Enable verbose logging"),
 ):
     """
@@ -161,9 +155,7 @@ def batch(
 
         for img_file in image_files:
             try:
-                result = pipeline.analyze(
-                    str(img_file), query=query, use_llm=False
-                )
+                result = pipeline.analyze(str(img_file), query=query, use_llm=False)
 
                 # Save individual result
                 result_file = out_path / f"{img_file.stem}_context.json"
@@ -232,9 +224,7 @@ def batch(
 @app.command()
 def interactive(
     image_path: str = typer.Argument(..., help="Path to screenshot image"),
-    config: Optional[str] = typer.Option(
-        None, "--config", "-c", help="Path to config JSON file"
-    ),
+    config: Optional[str] = typer.Option(None, "--config", "-c", help="Path to config JSON file"),
     verbose: bool = typer.Option(False, "--verbose", help="Enable verbose logging"),
 ):
     """
@@ -260,11 +250,13 @@ def interactive(
         context = pipeline.extract_context(str(path))
         progress.update(task, completed=True)
 
-    console.print(Panel(
-        context.to_summary(),
-        title=f"Screenshot: {path.name}",
-        style="cyan",
-    ))
+    console.print(
+        Panel(
+            context.to_summary(),
+            title=f"Screenshot: {path.name}",
+            style="cyan",
+        )
+    )
 
     console.print(
         "\n[bold green]Interactive mode.[/bold green] "
@@ -291,11 +283,13 @@ def interactive(
             console.print(Panel(response, title="IrpAI", style="green"))
         except Exception:
             # Show the enhanced prompt instead
-            console.print(Panel(
-                f"[yellow]LLM unavailable. Here's the enhanced prompt you can use:[/yellow]\n\n{prompt}",
-                title="IrpAI (Offline)",
-                style="yellow",
-            ))
+            console.print(
+                Panel(
+                    f"[yellow]LLM unavailable. Here's the enhanced prompt you can use:[/yellow]\n\n{prompt}",
+                    title="IrpAI (Offline)",
+                    style="yellow",
+                )
+            )
 
     console.print("\n[dim]Goodbye![/dim]")
 
@@ -325,13 +319,15 @@ def info():
     """Show IrpAI system information and available components."""
     from irpai import __version__
 
-    console.print(Panel(
-        f"[bold]IrpAI - Image Resolution Pipeline AI[/bold]\n"
-        f"Version: {__version__}\n"
-        f"Machine Vision Preprocessing for LLM-Screenshot Interactions",
-        title="IrpAI",
-        style="cyan",
-    ))
+    console.print(
+        Panel(
+            f"[bold]IrpAI - Image Resolution Pipeline AI[/bold]\n"
+            f"Version: {__version__}\n"
+            f"Machine Vision Preprocessing for LLM-Screenshot Interactions",
+            title="IrpAI",
+            style="cyan",
+        )
+    )
 
     # Check component availability
     table = Table(title="Component Status")
@@ -342,6 +338,7 @@ def info():
     # OpenCV
     try:
         import cv2
+
         table.add_row("OpenCV", "[green]✓ Available[/green]", f"v{cv2.__version__}")
     except ImportError:
         table.add_row("OpenCV", "[red]✗ Missing[/red]", "pip install opencv-python")
@@ -349,6 +346,7 @@ def info():
     # PyTorch
     try:
         import torch
+
         gpu = "CUDA" if torch.cuda.is_available() else "CPU only"
         table.add_row("PyTorch", "[green]✓ Available[/green]", f"v{torch.__version__} ({gpu})")
     except ImportError:
@@ -357,6 +355,7 @@ def info():
     # PaddleOCR
     try:
         import paddleocr
+
         table.add_row("PaddleOCR", "[green]✓ Available[/green]", "Primary OCR engine")
     except ImportError:
         table.add_row("PaddleOCR", "[yellow]○ Optional[/yellow]", "pip install paddleocr")
@@ -364,6 +363,7 @@ def info():
     # EasyOCR
     try:
         import easyocr
+
         table.add_row("EasyOCR", "[green]✓ Available[/green]", "Fallback OCR engine")
     except ImportError:
         table.add_row("EasyOCR", "[yellow]○ Optional[/yellow]", "pip install easyocr")
@@ -371,13 +371,19 @@ def info():
     # SentenceTransformers
     try:
         import sentence_transformers
+
         table.add_row("SentenceTransformers", "[green]✓ Available[/green]", "Embedding retrieval")
     except ImportError:
-        table.add_row("SentenceTransformers", "[yellow]○ Optional[/yellow]", "pip install sentence-transformers")
+        table.add_row(
+            "SentenceTransformers",
+            "[yellow]○ Optional[/yellow]",
+            "pip install sentence-transformers",
+        )
 
     # OpenAI
     try:
         import openai
+
         table.add_row("OpenAI SDK", "[green]✓ Available[/green]", "LLM provider")
     except ImportError:
         table.add_row("OpenAI SDK", "[yellow]○ Optional[/yellow]", "pip install openai")
@@ -390,11 +396,13 @@ def _display_result(result, query: Optional[str] = None):
     ctx = result.structured_context
 
     # Summary panel
-    console.print(Panel(
-        ctx.to_summary(),
-        title=f"{ctx.platform} - {ctx.app_title}",
-        style="cyan",
-    ))
+    console.print(
+        Panel(
+            ctx.to_summary(),
+            title=f"{ctx.platform} - {ctx.app_title}",
+            style="cyan",
+        )
+    )
 
     # Timing info
     timing_table = Table(title="Processing Timings")
@@ -411,7 +419,9 @@ def _display_result(result, query: Optional[str] = None):
     console.print(timing_table)
 
     # Confidence
-    conf_color = "green" if result.confidence > 0.7 else "yellow" if result.confidence > 0.4 else "red"
+    conf_color = (
+        "green" if result.confidence > 0.7 else "yellow" if result.confidence > 0.4 else "red"
+    )
     console.print(f"\nConfidence: [{conf_color}]{result.confidence:.1%}[/{conf_color}]")
 
     # Warnings
@@ -421,17 +431,21 @@ def _display_result(result, query: Optional[str] = None):
 
     # LLM response
     if result.llm_response:
-        console.print(Panel(
-            result.llm_response,
-            title="IrpAI Response",
-            style="green",
-        ))
+        console.print(
+            Panel(
+                result.llm_response,
+                title="IrpAI Response",
+                style="green",
+            )
+        )
     elif query and result.enhanced_prompt:
-        console.print(Panel(
-            result.enhanced_prompt,
-            title="Enhanced Prompt (LLM not called)",
-            style="yellow",
-        ))
+        console.print(
+            Panel(
+                result.enhanced_prompt,
+                title="Enhanced Prompt (LLM not called)",
+                style="yellow",
+            )
+        )
 
 
 if __name__ == "__main__":

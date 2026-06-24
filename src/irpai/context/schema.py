@@ -57,8 +57,6 @@ class ScreenSummary:
     """Bullet list of the most important elements / actions visible."""
 
 
-
-
 @dataclass
 class PipelineMetadata:
     """Metadata about the pipeline run that produced this context pack."""
@@ -177,6 +175,7 @@ class ContextPack:
 
 
 # -- helpers ----------------------------------------------------------------
+
 
 def _summary_dict(s: ScreenSummary) -> dict[str, Any]:
     d: dict[str, Any] = {}

@@ -29,9 +29,11 @@ from tests.research.synthetic_scenes import SyntheticScene, build_all_scenes
 # Result types
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class DegradationResult:
     """Result at a single degradation level."""
+
     degradation_type: str
     level: float | int
     level_label: str
@@ -53,6 +55,7 @@ class DataEfficiencyResults:
 # Safe pipeline runner
 # ---------------------------------------------------------------------------
 
+
 def _safe_run(pipeline: IrpAIPipeline, image: Image.Image) -> ContextPack | None:
     """Run pipeline with fallback to manual layer execution."""
     try:
@@ -66,7 +69,9 @@ def _safe_run(pipeline: IrpAIPipeline, image: Image.Image) -> ContextPack | None
         ocr_result = pipeline._run_ocr(normalized)
         layout = pipeline._layout.analyze(ocr_result, detections)
         return pipeline._assembler.assemble(
-            layout=layout, ocr=ocr_result, detections=detections,
+            layout=layout,
+            ocr=ocr_result,
+            detections=detections,
         )
     except Exception:
         return None
@@ -75,6 +80,7 @@ def _safe_run(pipeline: IrpAIPipeline, image: Image.Image) -> ContextPack | None
 # ---------------------------------------------------------------------------
 # Degradation functions
 # ---------------------------------------------------------------------------
+
 
 def _reduce_resolution(img: Image.Image, factor: float) -> Image.Image:
     """Downscale image to factor × original size."""
@@ -136,7 +142,7 @@ def run_data_efficiency_benchmark() -> DataEfficiencyResults:
         # Resolution degradation
         for factor in RESOLUTION_FACTORS:
             degraded = _reduce_resolution(scene.image, factor)
-            r = _run_single(pipeline, degraded, "resolution", factor, f"{int(factor*100)}%", name)
+            r = _run_single(pipeline, degraded, "resolution", factor, f"{int(factor * 100)}%", name)
             results.results.append(r)
 
         # Noise injection
@@ -162,14 +168,14 @@ def run_data_efficiency_benchmark() -> DataEfficiencyResults:
 
     # Compute graceful degradation index
     baselines = [r for r in results.results if r.level_label in ("100%", "σ=0", "1.0", "Q95")]
-    degraded_all = [r for r in results.results if r.level_label not in ("100%", "σ=0", "1.0", "Q95")]
+    degraded_all = [
+        r for r in results.results if r.level_label not in ("100%", "σ=0", "1.0", "Q95")
+    ]
 
     if baselines and degraded_all:
         avg_baseline = sum(r.regions_found for r in baselines) / len(baselines)
         avg_degraded = sum(r.regions_found for r in degraded_all) / len(degraded_all)
-        results.graceful_degradation_index = round(
-            avg_degraded / max(avg_baseline, 1) * 100, 1
-        )
+        results.graceful_degradation_index = round(avg_degraded / max(avg_baseline, 1) * 100, 1)
 
     return results
 

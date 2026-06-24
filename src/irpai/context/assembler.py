@@ -144,9 +144,7 @@ class ContextAssembler:
 
         # Key elements: most common roles
         role_counts = Counter(r.role for r in layout.regions if r.role != "unknown")
-        key_elements = [
-            f"{count}× {role}" for role, count in role_counts.most_common(8)
-        ]
+        key_elements = [f"{count}× {role}" for role, count in role_counts.most_common(8)]
 
         # Description
         description = self._generate_description(layout, app_type)
@@ -224,4 +222,3 @@ class ContextAssembler:
                     children=region.children,
                     properties=region.properties,
                 )
-

@@ -101,7 +101,9 @@ class TestLayoutAnalyzer:
                 confidence=0.95,
             ),
             OCRBlock(
-                lines=[OCRLine(text="small body text here", bbox=(10, 60, 300, 75), confidence=0.9)],
+                lines=[
+                    OCRLine(text="small body text here", bbox=(10, 60, 300, 75), confidence=0.9)
+                ],
                 bbox=(10, 60, 300, 75),
                 confidence=0.9,
             ),

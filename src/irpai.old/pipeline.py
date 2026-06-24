@@ -120,8 +120,7 @@ class IrpAIPipeline:
         quality = Preprocessor.compute_quality_metrics(preprocessed)
         if quality["is_low_resolution"]:
             warnings.append(
-                f"Low resolution image ({quality['resolution']}). "
-                "Results may be less accurate."
+                f"Low resolution image ({quality['resolution']}). Results may be less accurate."
             )
 
         # ── Check cache ──
@@ -132,9 +131,7 @@ class IrpAIPipeline:
             stage_timings["cache_hit"] = 0.0
         else:
             # ── Stages 2-4: Detection, OCR, Fusion ──
-            structured_context = self._process_image(
-                preprocessed, stage_timings, warnings
-            )
+            structured_context = self._process_image(preprocessed, stage_timings, warnings)
 
             # Cache the result
             if self.config.enable_caching:
@@ -186,9 +183,7 @@ class IrpAIPipeline:
 
         return result
 
-    def extract_context(
-        self, image: str | Path | np.ndarray
-    ) -> StructuredContext:
+    def extract_context(self, image: str | Path | np.ndarray) -> StructuredContext:
         """
         Extract structured context without LLM interaction.
 
@@ -240,9 +235,7 @@ class IrpAIPipeline:
             vision_task = asyncio.to_thread(self.ui_detector.detect, preprocessed)
             ocr_task = asyncio.to_thread(self.ocr_extractor.extract, preprocessed)
 
-            ui_detections, text_extractions = await asyncio.gather(
-                vision_task, ocr_task
-            )
+            ui_detections, text_extractions = await asyncio.gather(vision_task, ocr_task)
             stage_timings["parallel_detection"] = (time.perf_counter() - t0) * 1000
 
             # PII redaction
@@ -316,9 +309,7 @@ class IrpAIPipeline:
         t0 = time.perf_counter()
         try:
             if self.config.ocr.enable_ensemble:
-                text_extractions = self.ocr_extractor.extract_ensemble(
-                    preprocessed, ui_detections
-                )
+                text_extractions = self.ocr_extractor.extract_ensemble(preprocessed, ui_detections)
             else:
                 text_extractions = self.ocr_extractor.extract(
                     preprocessed, ui_detections if ui_detections else None
@@ -361,9 +352,7 @@ class IrpAIPipeline:
 
         # UI detection confidence
         if context.ui_detections:
-            avg_det = sum(d.confidence for d in context.ui_detections) / len(
-                context.ui_detections
-            )
+            avg_det = sum(d.confidence for d in context.ui_detections) / len(context.ui_detections)
             scores.append(avg_det)
 
         # OCR confidence
@@ -417,14 +406,14 @@ class IrpAIPipeline:
 
         # Color map for element types
         colors = {
-            "button": (0, 255, 0),      # Green
-            "text_input": (255, 128, 0), # Orange
-            "text_block": (0, 128, 255), # Blue
-            "image": (255, 0, 255),      # Magenta
-            "menu": (255, 255, 0),       # Cyan
-            "modal": (0, 0, 255),        # Red
-            "container": (128, 128, 128),# Gray
-            "icon": (255, 0, 128),       # Pink
+            "button": (0, 255, 0),  # Green
+            "text_input": (255, 128, 0),  # Orange
+            "text_block": (0, 128, 255),  # Blue
+            "image": (255, 0, 255),  # Magenta
+            "menu": (255, 255, 0),  # Cyan
+            "modal": (0, 0, 255),  # Red
+            "container": (128, 128, 128),  # Gray
+            "icon": (255, 0, 128),  # Pink
         }
         default_color = (200, 200, 200)
 

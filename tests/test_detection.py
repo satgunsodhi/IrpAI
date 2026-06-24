@@ -68,6 +68,7 @@ class TestFallbackGridDetector:
     def test_horizontal_bands_detected(self) -> None:
         """An image with a title bar and status bar should get split."""
         from PIL import ImageDraw
+
         img = Image.new("RGB", (900, 600), color=(30, 30, 30))
         draw = ImageDraw.Draw(img)
         # Title bar (larger so band-averaging picks it up)
@@ -87,6 +88,7 @@ class TestFallbackGridDetector:
     def test_sidebar_detected(self) -> None:
         """An image with a very distinct sidebar should be split vertically."""
         from PIL import ImageDraw
+
         img = Image.new("RGB", (900, 600), color=(30, 30, 30))
         draw = ImageDraw.Draw(img)
         # Very distinct sidebar (big colour difference)

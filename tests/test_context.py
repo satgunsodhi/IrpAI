@@ -14,7 +14,9 @@ from irpai.ocr.base import OCRBlock, OCRLine, OCRResult
 def _make_layout() -> LayoutResult:
     regions = [
         SemanticRegion(role="heading", bbox=(10, 10, 300, 40), text="Dashboard"),
-        SemanticRegion(role="body", bbox=(10, 50, 700, 400), text="Welcome to the app.\nHere is your data."),
+        SemanticRegion(
+            role="body", bbox=(10, 50, 700, 400), text="Welcome to the app.\nHere is your data."
+        ),
         SemanticRegion(role="button", bbox=(600, 450, 700, 480), text="Save"),
     ]
     return LayoutResult(

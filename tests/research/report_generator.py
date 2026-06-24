@@ -54,6 +54,7 @@ def generate_report(
 # Report sections
 # ---------------------------------------------------------------------------
 
+
 def _header() -> str:
     now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
     return f"""# IrpAI Research Report — Quantitative Impact Analysis
@@ -80,20 +81,30 @@ def _executive_summary(
 
     if cost.tier_results:
         avg_tokens = sum(r.context_tokens for r in cost.tier_results) / len(cost.tier_results)
-        findings.append(f"- **Context Compression**: Average output of ~{int(avg_tokens)} tokens per screenshot")
+        findings.append(
+            f"- **Context Compression**: Average output of ~{int(avg_tokens)} tokens per screenshot"
+        )
 
     if cost.token_reduction_ratios:
         avg_ratio = sum(cost.token_reduction_ratios.values()) / len(cost.token_reduction_ratios)
-        findings.append(f"- **Token Reduction**: {avg_ratio:.1f}× average reduction vs raw vision tokens")
+        findings.append(
+            f"- **Token Reduction**: {avg_ratio:.1f}× average reduction vs raw vision tokens"
+        )
 
     if accuracy.overall_region_recall > 0:
-        findings.append(f"- **Region Detection**: {accuracy.overall_region_recall:.1%} recall across all test scenes")
+        findings.append(
+            f"- **Region Detection**: {accuracy.overall_region_recall:.1%} recall across all test scenes"
+        )
 
     if accuracy.overall_text_completeness > 0:
-        findings.append(f"- **Text Extraction**: {accuracy.overall_text_completeness:.1%} completeness")
+        findings.append(
+            f"- **Text Extraction**: {accuracy.overall_text_completeness:.1%} completeness"
+        )
 
     if data_eff.graceful_degradation_index > 0:
-        findings.append(f"- **Data Resilience**: {data_eff.graceful_degradation_index:.1f}% degradation index (region retention under imperfect input)")
+        findings.append(
+            f"- **Data Resilience**: {data_eff.graceful_degradation_index:.1f}% degradation index (region retention under imperfect input)"
+        )
 
     if latency:
         for lr in latency:
@@ -102,10 +113,14 @@ def _executive_summary(
                 findings.append(f"- **Latency ({lr.tier})**: {avg_ms:.0f}ms average end-to-end")
 
     if tokens.budget_compliance_pct > 0:
-        findings.append(f"- **Token Budget**: {tokens.budget_compliance_pct:.0f}% compliance with 4096-token limit")
+        findings.append(
+            f"- **Token Budget**: {tokens.budget_compliance_pct:.0f}% compliance with 4096-token limit"
+        )
 
     if privacy.overall_precision > 0:
-        findings.append(f"- **PII Protection**: {privacy.overall_precision:.1%} precision, {privacy.overall_recall:.1%} recall")
+        findings.append(
+            f"- **PII Protection**: {privacy.overall_precision:.1%} precision, {privacy.overall_recall:.1%} recall"
+        )
 
     lines.extend(findings or ["- No benchmark data available."])
     return "\n".join(lines)
@@ -129,25 +144,29 @@ def _cost_section(cost: CostBenchmarkResults) -> str:
 
     # Token reduction ratios
     if cost.token_reduction_ratios:
-        lines.extend([
-            "",
-            "### 1.2 Token Reduction Ratios",
-            "",
-            "| Scene × Tier | Vision Tokens → Context Tokens | Reduction Factor |",
-            "|--------------|-------------------------------|------------------|",
-        ])
+        lines.extend(
+            [
+                "",
+                "### 1.2 Token Reduction Ratios",
+                "",
+                "| Scene × Tier | Vision Tokens → Context Tokens | Reduction Factor |",
+                "|--------------|-------------------------------|------------------|",
+            ]
+        )
         for key, ratio in cost.token_reduction_ratios.items():
             lines.append(f"| {key} | — | {ratio}× |")
 
     # API savings table
     if cost.api_savings:
-        lines.extend([
-            "",
-            "### 1.3 Estimated API Cost Savings per Image",
-            "",
-            "Savings calculated as `(vision_tokens − context_tokens) × price_per_1K_tokens`",
-            "",
-        ])
+        lines.extend(
+            [
+                "",
+                "### 1.3 Estimated API Cost Savings per Image",
+                "",
+                "Savings calculated as `(vision_tokens − context_tokens) × price_per_1K_tokens`",
+                "",
+            ]
+        )
 
         # Build header row
         models = list(LLM_PRICING.keys())
@@ -159,11 +178,13 @@ def _cost_section(cost: CostBenchmarkResults) -> str:
             cells = [f"${savings.get(m, 0):.6f}" for m in models]
             lines.append(f"| {key} | " + " | ".join(cells) + " |")
 
-        lines.extend([
-            "",
-            "**Pricing tiers used (USD/1K input tokens):**",
-            "",
-        ])
+        lines.extend(
+            [
+                "",
+                "**Pricing tiers used (USD/1K input tokens):**",
+                "",
+            ]
+        )
         for model, price in LLM_PRICING.items():
             lines.append(f"- {model}: ${price}")
 
@@ -198,12 +219,14 @@ def _data_efficiency_section(data_eff: DataEfficiencyResults) -> str:
         if not items:
             continue
 
-        lines.extend([
-            f"### {label}",
-            "",
-            "| Scene | Level | Regions | Text Chars | Confidence | Tokens |",
-            "|-------|-------|---------|------------|------------|--------|",
-        ])
+        lines.extend(
+            [
+                f"### {label}",
+                "",
+                "| Scene | Level | Regions | Text Chars | Confidence | Tokens |",
+                "|-------|-------|---------|------------|------------|--------|",
+            ]
+        )
         for r in items:
             if r.error:
                 lines.append(f"| {r.scene} | {r.level_label} | ERROR | — | — | — |")
@@ -234,16 +257,18 @@ def _accuracy_section(accuracy: AccuracyBenchmarkResults) -> str:
             f"{r.text_completeness:.1%} | {app} | {r.mean_iou:.3f} | {r.regions_detected}/{r.regions_expected} |"
         )
 
-    lines.extend([
-        "",
-        "### 3.2 Aggregate Metrics",
-        "",
-        f"- **Overall Region Recall:** {accuracy.overall_region_recall:.1%}",
-        f"- **Overall Role Accuracy:** {accuracy.overall_role_accuracy:.1%}",
-        f"- **Overall Text Completeness:** {accuracy.overall_text_completeness:.1%}",
-        f"- **App Type Detection Accuracy:** {accuracy.overall_app_type_accuracy:.1%}",
-        f"- **Overall Mean IoU:** {accuracy.overall_mean_iou:.3f}",
-    ])
+    lines.extend(
+        [
+            "",
+            "### 3.2 Aggregate Metrics",
+            "",
+            f"- **Overall Region Recall:** {accuracy.overall_region_recall:.1%}",
+            f"- **Overall Role Accuracy:** {accuracy.overall_role_accuracy:.1%}",
+            f"- **Overall Text Completeness:** {accuracy.overall_text_completeness:.1%}",
+            f"- **App Type Detection Accuracy:** {accuracy.overall_app_type_accuracy:.1%}",
+            f"- **Overall Mean IoU:** {accuracy.overall_mean_iou:.3f}",
+        ]
+    )
 
     return "\n".join(lines)
 
@@ -255,39 +280,44 @@ def _latency_section(latency_results: list[LatencyBenchmarkResults]) -> str:
     ]
 
     for lr in latency_results:
-        lines.extend([
-            f"### 4.x Tier: {lr.tier}",
-            "",
-            "#### Layer Breakdown",
-            "",
-            "| Layer | Mean (ms) | P50 (ms) | P95 (ms) | P99 (ms) |",
-            "|-------|-----------|----------|----------|----------|",
-        ])
+        lines.extend(
+            [
+                f"### 4.x Tier: {lr.tier}",
+                "",
+                "#### Layer Breakdown",
+                "",
+                "| Layer | Mean (ms) | P50 (ms) | P95 (ms) | P99 (ms) |",
+                "|-------|-----------|----------|----------|----------|",
+            ]
+        )
 
         for layer_name in ["preprocessing", "detection", "ocr", "layout", "assembly", "total"]:
             lt = lr.layer_timings.get(layer_name)
             if lt and lt.times_ms:
                 lines.append(
-                    f"| {layer_name} | {lt.mean:.1f} | {lt.p50:.1f} | "
-                    f"{lt.p95:.1f} | {lt.p99:.1f} |"
+                    f"| {layer_name} | {lt.mean:.1f} | {lt.p50:.1f} | {lt.p95:.1f} | {lt.p99:.1f} |"
                 )
 
-        lines.extend([
-            "",
-            f"- **Warmup (first run):** {lr.warmup_first_ms:.0f}ms",
-            f"- **Steady-state average:** {lr.warmup_steady_ms:.0f}ms",
-            f"- **Throughput:** {lr.throughput_ips:.2f} images/sec",
-            "",
-        ])
+        lines.extend(
+            [
+                "",
+                f"- **Warmup (first run):** {lr.warmup_first_ms:.0f}ms",
+                f"- **Steady-state average:** {lr.warmup_steady_ms:.0f}ms",
+                f"- **Throughput:** {lr.throughput_ips:.2f} images/sec",
+                "",
+            ]
+        )
 
         # Scaling profile
         if lr.scale_profiles:
-            lines.extend([
-                "#### Resolution Scaling",
-                "",
-                "| Resolution | Latency (ms) |",
-                "|------------|-------------|",
-            ])
+            lines.extend(
+                [
+                    "#### Resolution Scaling",
+                    "",
+                    "| Resolution | Latency (ms) |",
+                    "|------------|-------------|",
+                ]
+            )
             for sp in lr.scale_profiles:
                 lines.append(f"| {sp.resolution} | {sp.latency_ms} |")
             lines.append("")
@@ -314,13 +344,15 @@ def _token_savings_section(tokens: TokenSavingsBenchmarkResults) -> str:
 
     # Format comparison
     if tokens.format_comparisons:
-        lines.extend([
-            "",
-            "### 5.2 Output Format Comparison",
-            "",
-            "| Scene | JSON (tokens) | Markdown (tokens) | System Prompt (tokens) |",
-            "|-------|---------------|-------------------|----------------------|",
-        ])
+        lines.extend(
+            [
+                "",
+                "### 5.2 Output Format Comparison",
+                "",
+                "| Scene | JSON (tokens) | Markdown (tokens) | System Prompt (tokens) |",
+                "|-------|---------------|-------------------|----------------------|",
+            ]
+        )
         for fc in tokens.format_comparisons:
             lines.append(
                 f"| {fc.scene} | {fc.json_tokens} | {fc.markdown_tokens} | {fc.system_prompt_tokens} |"
@@ -329,13 +361,15 @@ def _token_savings_section(tokens: TokenSavingsBenchmarkResults) -> str:
     # Overhead analysis
     overhead_scenes = [r for r in tokens.scene_results if r.hierarchy_tokens > 0]
     if overhead_scenes:
-        lines.extend([
-            "",
-            "### 5.3 Hierarchy & BBox Overhead",
-            "",
-            "| Scene | With Hierarchy | Without | Overhead | With BBox | Without | Savings |",
-            "|-------|---------------|---------|----------|-----------|---------|---------|",
-        ])
+        lines.extend(
+            [
+                "",
+                "### 5.3 Hierarchy & BBox Overhead",
+                "",
+                "| Scene | With Hierarchy | Without | Overhead | With BBox | Without | Savings |",
+                "|-------|---------------|---------|----------|-----------|---------|---------|",
+            ]
+        )
         for r in overhead_scenes:
             lines.append(
                 f"| {r.scene} | {r.hierarchy_tokens} | {r.no_hierarchy_tokens} | "
@@ -343,14 +377,16 @@ def _token_savings_section(tokens: TokenSavingsBenchmarkResults) -> str:
                 f"{r.bbox_savings_pct:.1f}% |"
             )
 
-    lines.extend([
-        "",
-        "### 5.4 Aggregate",
-        "",
-        f"- **Average Compression Ratio:** {tokens.overall_compression_ratio:.1f}×",
-        f"- **Token Budget Compliance:** {tokens.budget_compliance_pct:.0f}%",
-        f"- **Average Semantic Density:** {tokens.avg_semantic_density:.2f} roles/1K tokens",
-    ])
+    lines.extend(
+        [
+            "",
+            "### 5.4 Aggregate",
+            "",
+            f"- **Average Compression Ratio:** {tokens.overall_compression_ratio:.1f}×",
+            f"- **Token Budget Compliance:** {tokens.budget_compliance_pct:.0f}%",
+            f"- **Average Semantic Density:** {tokens.avg_semantic_density:.2f} roles/1K tokens",
+        ]
+    )
 
     return "\n".join(lines)
 
@@ -371,16 +407,18 @@ def _privacy_section(privacy: PrivacyBenchmarkResults) -> str:
             f"{c.false_positives} | {c.precision:.1%} | {c.recall:.1%} |"
         )
 
-    lines.extend([
-        "",
-        "### 6.2 Aggregate",
-        "",
-        f"- **Overall Precision:** {privacy.overall_precision:.1%}",
-        f"- **Overall Recall:** {privacy.overall_recall:.1%}",
-        f"- **Redaction Completeness:** {privacy.redaction_completeness:.1%}",
-        f"- **False Positive Rate:** {privacy.false_positive_rate:.1%}",
-        f"- **Total Test Cases:** {privacy.total_test_cases}",
-    ])
+    lines.extend(
+        [
+            "",
+            "### 6.2 Aggregate",
+            "",
+            f"- **Overall Precision:** {privacy.overall_precision:.1%}",
+            f"- **Overall Recall:** {privacy.overall_recall:.1%}",
+            f"- **Redaction Completeness:** {privacy.redaction_completeness:.1%}",
+            f"- **False Positive Rate:** {privacy.false_positive_rate:.1%}",
+            f"- **Total Test Cases:** {privacy.total_test_cases}",
+        ]
+    )
 
     return "\n".join(lines)
 

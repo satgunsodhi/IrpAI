@@ -32,6 +32,7 @@ PII_PATTERNS: dict[str, re.Pattern[str]] = {
 
 # -- public API -------------------------------------------------------------
 
+
 def redact_text(text: str) -> str:
     """
     Replace all PII occurrences in *text* with ``[REDACTED_<TYPE>]`` tokens.

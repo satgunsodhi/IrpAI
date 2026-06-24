@@ -47,7 +47,9 @@ class OrientationDetector:
 
         # Use edge detection to find dominant line directions
         edges = cv2.Canny(gray, 50, 150)
-        lines = cv2.HoughLinesP(edges, 1, np.pi / 180, threshold=80, minLineLength=50, maxLineGap=10)
+        lines = cv2.HoughLinesP(
+            edges, 1, np.pi / 180, threshold=80, minLineLength=50, maxLineGap=10
+        )
 
         if lines is None or len(lines) < 5:
             return 0
@@ -73,8 +75,8 @@ class OrientationDetector:
             return 270
 
         # Check for upside-down using text density (text usually at top)
-        top_third = gray[:h // 3, :]
-        bottom_third = gray[2 * h // 3:, :]
+        top_third = gray[: h // 3, :]
+        bottom_third = gray[2 * h // 3 :, :]
 
         top_edges = cv2.Canny(top_third, 50, 150)
         bottom_edges = cv2.Canny(bottom_third, 50, 150)

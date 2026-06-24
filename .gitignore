@@ -48,3 +48,12 @@ checkpoints/
 # Optional local caches
 .cache/
 hf_home/
+
+# Secrets and Environment Variables
+.env
+.env.*
+!.env.example
+
+# Local run artifacts
+artifacts/
+screenshot.png

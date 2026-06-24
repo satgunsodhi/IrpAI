@@ -32,6 +32,7 @@ from tests.research.synthetic_scenes import (
 # Scene fixtures
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture(scope="session")
 def ide_scene() -> SyntheticScene:
     return make_ide_scene()
@@ -66,6 +67,7 @@ def all_scenes() -> list[SyntheticScene]:
 # Pipeline fixtures
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture(scope="session")
 def lite_pipeline() -> IrpAIPipeline:
     return IrpAIPipeline(IrpAIConfig(tier=Tier.LITE))
@@ -80,9 +82,11 @@ def standard_pipeline() -> IrpAIPipeline:
 # Timing helpers
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class TimingResult:
     """Result of a timed execution."""
+
     elapsed_ms: float = 0.0
     label: str = ""
 
@@ -100,9 +104,11 @@ def timed(label: str = "") -> Generator[TimingResult, None, None]:
 # Metric accumulator
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class MetricAccumulator:
     """Collects named numeric metrics for report generation."""
+
     data: dict[str, list[float]] = field(default_factory=dict)
 
     def record(self, name: str, value: float) -> None:

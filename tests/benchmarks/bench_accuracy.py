@@ -33,9 +33,11 @@ from tests.research.synthetic_scenes import (
 # Result types
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class SceneAccuracyResult:
     """Accuracy metrics for a single scene."""
+
     scene: str
     tier: str
     region_recall: float = 0.0
@@ -63,6 +65,7 @@ class AccuracyBenchmarkResults:
 # Safe pipeline runner
 # ---------------------------------------------------------------------------
 
+
 def _safe_run(pipeline: IrpAIPipeline, image: object) -> ContextPack | None:
     """Run pipeline with fallback to manual layer execution."""
     try:
@@ -76,7 +79,9 @@ def _safe_run(pipeline: IrpAIPipeline, image: object) -> ContextPack | None:
         ocr_result = pipeline._run_ocr(normalized)
         layout = pipeline._layout.analyze(ocr_result, detections)
         return pipeline._assembler.assemble(
-            layout=layout, ocr=ocr_result, detections=detections,
+            layout=layout,
+            ocr=ocr_result,
+            detections=detections,
         )
     except Exception:
         return None
@@ -85,6 +90,7 @@ def _safe_run(pipeline: IrpAIPipeline, image: object) -> ContextPack | None:
 # ---------------------------------------------------------------------------
 # Benchmark runner
 # ---------------------------------------------------------------------------
+
 
 def run_accuracy_benchmark() -> AccuracyBenchmarkResults:
     """Execute accuracy analysis across all scenes and tiers."""
@@ -103,10 +109,12 @@ def run_accuracy_benchmark() -> AccuracyBenchmarkResults:
                 sr = _evaluate_scene(pack, scene.ground_truth, tier.value)
                 results.scene_results.append(sr)
             else:
-                results.scene_results.append(SceneAccuracyResult(
-                    scene=scene.ground_truth.scene_name,
-                    tier=tier.value,
-                ))
+                results.scene_results.append(
+                    SceneAccuracyResult(
+                        scene=scene.ground_truth.scene_name,
+                        tier=tier.value,
+                    )
+                )
 
     # Aggregate overall metrics
     valid = [r for r in results.scene_results if r.regions_detected > 0]
@@ -114,9 +122,7 @@ def run_accuracy_benchmark() -> AccuracyBenchmarkResults:
         results.overall_region_recall = _avg([r.region_recall for r in valid])
         results.overall_role_accuracy = _avg([r.role_accuracy for r in valid])
         results.overall_text_completeness = _avg([r.text_completeness for r in valid])
-        results.overall_app_type_accuracy = sum(
-            1 for r in valid if r.app_type_correct
-        ) / len(valid)
+        results.overall_app_type_accuracy = sum(1 for r in valid if r.app_type_correct) / len(valid)
         results.overall_mean_iou = _avg([r.mean_iou for r in valid])
 
     return results
@@ -196,6 +202,7 @@ def _evaluate_scene(
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _roles_match(gt_role: str, pred_role: str) -> bool:
     """Fuzzy role matching — accounts for label mapping differences."""

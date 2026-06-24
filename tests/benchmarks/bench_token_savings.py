@@ -27,9 +27,11 @@ from tests.research.synthetic_scenes import SyntheticScene, build_all_scenes
 # Result types
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class FormatComparison:
     """Token counts across output formats."""
+
     scene: str
     json_tokens: int = 0
     markdown_tokens: int = 0
@@ -42,6 +44,7 @@ class FormatComparison:
 @dataclass
 class SceneTokenResult:
     """Token analysis for a single scene."""
+
     scene: str
     raw_text_chars: int = 0
     context_json_chars: int = 0
@@ -70,6 +73,7 @@ class TokenSavingsBenchmarkResults:
 # Safe pipeline runner
 # ---------------------------------------------------------------------------
 
+
 def _safe_run(pipeline: IrpAIPipeline, image: object) -> ContextPack | None:
     """Run pipeline with fallback to manual layer execution."""
     try:
@@ -83,7 +87,9 @@ def _safe_run(pipeline: IrpAIPipeline, image: object) -> ContextPack | None:
         ocr_result = pipeline._run_ocr(normalized)
         layout = pipeline._layout.analyze(ocr_result, detections)
         return pipeline._assembler.assemble(
-            layout=layout, ocr=ocr_result, detections=detections,
+            layout=layout,
+            ocr=ocr_result,
+            detections=detections,
         )
     except Exception:
         return None
@@ -117,17 +123,13 @@ def run_token_savings_benchmark() -> TokenSavingsBenchmarkResults:
     # Aggregates
     if results.scene_results:
         results.overall_compression_ratio = round(
-            sum(r.compression_ratio for r in results.scene_results)
-            / len(results.scene_results),
+            sum(r.compression_ratio for r in results.scene_results) / len(results.scene_results),
             1,
         )
         within = sum(1 for r in results.scene_results if r.within_budget)
-        results.budget_compliance_pct = round(
-            within / len(results.scene_results) * 100, 1
-        )
+        results.budget_compliance_pct = round(within / len(results.scene_results) * 100, 1)
         results.avg_semantic_density = round(
-            sum(r.semantic_density for r in results.scene_results)
-            / len(results.scene_results),
+            sum(r.semantic_density for r in results.scene_results) / len(results.scene_results),
             2,
         )
 

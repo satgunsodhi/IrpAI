@@ -13,7 +13,6 @@ Usage::
     print(pack.to_json())
 """
 
-
 from __future__ import annotations
 
 
@@ -127,8 +126,7 @@ class IrpAIPipeline:
         quality = normalized.quality_metrics
         if quality.get("is_low_resolution"):
             warnings.append(
-                f"Low resolution image ({quality.get('resolution')}). "
-                "Results may be less accurate."
+                f"Low resolution image ({quality.get('resolution')}). Results may be less accurate."
             )
 
         # -- Layer 2: Detection ---------------------------------------------
@@ -174,8 +172,7 @@ class IrpAIPipeline:
         stage_timings["assembly"] = round((time.perf_counter() - t_stage) * 1000, 1)
 
         log.info(
-            "✓ Pipeline complete in %.0f ms — %d regions, "
-            "confidence=%.2f, ~%d tokens  [%s]",
+            "✓ Pipeline complete in %.0f ms — %d regions, confidence=%.2f, ~%d tokens  [%s]",
             total_ms,
             len(pack.regions),
             confidence,
@@ -187,7 +184,6 @@ class IrpAIPipeline:
                 log.warning("⚠ %s", w)
 
         return pack
-
 
     def run_formatted(
         self,
@@ -226,7 +222,8 @@ class IrpAIPipeline:
 
     @staticmethod
     def _compute_confidence(
-        detections: DetectionOutput, ocr_result: OCRResult,
+        detections: DetectionOutput,
+        ocr_result: OCRResult,
     ) -> float:
         """
         Compute an overall pipeline confidence score (0.0–1.0).
@@ -238,9 +235,7 @@ class IrpAIPipeline:
 
         # Detection confidence
         if detections.detections:
-            avg_det = sum(d.confidence for d in detections.detections) / len(
-                detections.detections
-            )
+            avg_det = sum(d.confidence for d in detections.detections) / len(detections.detections)
             scores.append(avg_det)
 
         # OCR confidence
@@ -266,4 +261,3 @@ class IrpAIPipeline:
         log.info("Warming up pipeline (tier=%s)", self.config.tier.value)
         _ = self.ocr
         log.info("Warmup complete")
-

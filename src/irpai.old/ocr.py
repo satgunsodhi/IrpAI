@@ -87,7 +87,7 @@ class PaddleOCREngine:
 
             extractions.append(
                 TextExtraction(
-                    text=text.strip()[:self.config.max_text_length],
+                    text=text.strip()[: self.config.max_text_length],
                     bbox=bbox,
                     confidence=confidence,
                 )
@@ -151,7 +151,7 @@ class EasyOCREngine:
 
             extractions.append(
                 TextExtraction(
-                    text=text.strip()[:self.config.max_text_length],
+                    text=text.strip()[: self.config.max_text_length],
                     bbox=BoundingBox(
                         x1=min(x_coords),
                         y1=min(y_coords),
@@ -176,9 +176,7 @@ class TesseractEngine:
         try:
             import pytesseract  # type: ignore[import-not-found]
         except ImportError:
-            raise ImportError(
-                "pytesseract not installed. Install with: pip install pytesseract"
-            )
+            raise ImportError("pytesseract not installed. Install with: pip install pytesseract")
 
         # Convert to RGB
         rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
@@ -206,7 +204,7 @@ class TesseractEngine:
 
             extractions.append(
                 TextExtraction(
-                    text=text[:self.config.max_text_length],
+                    text=text[: self.config.max_text_length],
                     bbox=BoundingBox(x1=x, y1=y, x2=x + w, y2=y + h),
                     confidence=conf / 100.0,
                 )
@@ -424,9 +422,7 @@ class OCRExtractor:
             try:
                 engine = cls(self.config)
                 engines.append((name, engine))
-                weights[name] = {"paddleocr": 0.5, "easyocr": 0.3, "tesseract": 0.2}.get(
-                    name, 0.2
-                )
+                weights[name] = {"paddleocr": 0.5, "easyocr": 0.3, "tesseract": 0.2}.get(name, 0.2)
             except ImportError:
                 continue
 

@@ -30,9 +30,11 @@ from PIL import Image, ImageDraw, ImageFont
 # Ground-truth types
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class GroundTruthRegion:
     """Expected region in a synthetic screenshot."""
+
     role: str
     text: str
     bbox: tuple[int, int, int, int]  # (x1, y1, x2, y2)
@@ -42,6 +44,7 @@ class GroundTruthRegion:
 @dataclass
 class GroundTruth:
     """Complete ground truth for one synthetic screenshot."""
+
     scene_name: str
     app_type: str
     image_size: tuple[int, int]  # (w, h)
@@ -55,6 +58,7 @@ class GroundTruth:
 @dataclass
 class SyntheticScene:
     """A synthetic screenshot and its ground truth."""
+
     image: Image.Image
     ground_truth: GroundTruth
 
@@ -62,6 +66,7 @@ class SyntheticScene:
 # ---------------------------------------------------------------------------
 # Font helper
 # ---------------------------------------------------------------------------
+
 
 def _load_font(size: int) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
     """Best-effort font loader — falls back gracefully."""
@@ -71,8 +76,8 @@ def _load_font(size: int) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
         "/Library/Fonts/Arial.ttf",
         "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf",
         "/usr/share/fonts/truetype/liberation/LiberationMono-Regular.ttf",
-        "C:/Windows/Fonts/consola.ttf",
-        "C:/Windows/Fonts/arial.ttf",
+        "consola.ttf",
+        "arial.ttf",
     ]
     for fp in candidates:
         try:
@@ -88,6 +93,7 @@ def _load_font(size: int) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
 # ---------------------------------------------------------------------------
 # Scene builders
 # ---------------------------------------------------------------------------
+
 
 def make_ide_scene() -> SyntheticScene:
     """1200×900 IDE-like screenshot (title bar, sidebar, editor, status bar)."""
@@ -118,10 +124,13 @@ def make_ide_scene() -> SyntheticScene:
     sidebar_text = "\n".join(sidebar_items)
     for i, item in enumerate(sidebar_items):
         draw.text((18, TITLE_H + 16 + i * 32), item, fill=(190, 190, 190), font=font_sidebar)
-    regions.append(GroundTruthRegion(
-        role="nav", text=sidebar_text,
-        bbox=(0, TITLE_H, SIDEBAR_W, H - STATUS_H),
-    ))
+    regions.append(
+        GroundTruthRegion(
+            role="nav",
+            text=sidebar_text,
+            bbox=(0, TITLE_H, SIDEBAR_W, H - STATUS_H),
+        )
+    )
 
     # Editor
     code_lines = [
@@ -138,26 +147,38 @@ def make_ide_scene() -> SyntheticScene:
     ]
     code_text = "\n".join(code_lines)
     code_colors = [
-        (86, 156, 214), (212, 212, 212), (86, 156, 214),
-        (212, 212, 212), (212, 212, 212), (206, 145, 120),
-        (212, 212, 212), (212, 212, 212), (86, 156, 214),
+        (86, 156, 214),
+        (212, 212, 212),
+        (86, 156, 214),
+        (212, 212, 212),
+        (212, 212, 212),
+        (206, 145, 120),
+        (212, 212, 212),
+        (212, 212, 212),
+        (86, 156, 214),
         (212, 212, 212),
     ]
     for i, (line, colour) in enumerate(zip(code_lines, code_colors)):
         draw.text((SIDEBAR_W + 24, TITLE_H + 16 + i * 24), line, fill=colour, font=font_code)
-    regions.append(GroundTruthRegion(
-        role="body", text=code_text,
-        bbox=(SIDEBAR_W, TITLE_H, W, H - STATUS_H),
-    ))
+    regions.append(
+        GroundTruthRegion(
+            role="body",
+            text=code_text,
+            bbox=(SIDEBAR_W, TITLE_H, W, H - STATUS_H),
+        )
+    )
 
     # Status bar
     draw.rectangle([0, H - STATUS_H, W, H], fill=(0, 122, 204))
     status_text = "Python 3.12   UTF-8   LF   Ln 1, Col 1"
     draw.text((14, H - STATUS_H + 8), status_text, fill=(255, 255, 255), font=font_status)
-    regions.append(GroundTruthRegion(
-        role="status_bar", text=status_text,
-        bbox=(0, H - STATUS_H, W, H),
-    ))
+    regions.append(
+        GroundTruthRegion(
+            role="status_bar",
+            text=status_text,
+            bbox=(0, H - STATUS_H, W, H),
+        )
+    )
 
     all_text = "\n".join(r.text for r in regions)
     gt = GroundTruth(
@@ -192,16 +213,24 @@ def make_browser_scene() -> SyntheticScene:
     regions.append(GroundTruthRegion(role="nav", text=nav_text, bbox=(0, 0, W, NAV_H)))
 
     # Search bar
-    draw.rectangle([200, NAV_H + 20, 800, NAV_H + 56], fill=(255, 255, 255), outline=(200, 200, 200))
+    draw.rectangle(
+        [200, NAV_H + 20, 800, NAV_H + 56], fill=(255, 255, 255), outline=(200, 200, 200)
+    )
     search_text = "Search products..."
     draw.text((212, NAV_H + 28), search_text, fill=(160, 160, 160), font=font_body)
-    regions.append(GroundTruthRegion(role="input", text=search_text, bbox=(200, NAV_H + 20, 800, NAV_H + 56)))
+    regions.append(
+        GroundTruthRegion(role="input", text=search_text, bbox=(200, NAV_H + 20, 800, NAV_H + 56))
+    )
 
     # Heading
     heading_y = NAV_H + 80
     heading_text = "Featured Products"
     draw.text((40, heading_y), heading_text, fill=(33, 37, 41), font=font_heading)
-    regions.append(GroundTruthRegion(role="heading", text=heading_text, bbox=(40, heading_y, 400, heading_y + 30)))
+    regions.append(
+        GroundTruthRegion(
+            role="heading", text=heading_text, bbox=(40, heading_y, 400, heading_y + 30)
+        )
+    )
 
     # Content cards
     cards = [
@@ -212,16 +241,21 @@ def make_browser_scene() -> SyntheticScene:
     card_y = heading_y + 50
     for i, (title, desc) in enumerate(cards):
         cx = 40 + i * 310
-        draw.rectangle([cx, card_y, cx + 290, card_y + 180], fill=(255, 255, 255), outline=(220, 220, 220))
+        draw.rectangle(
+            [cx, card_y, cx + 290, card_y + 180], fill=(255, 255, 255), outline=(220, 220, 220)
+        )
         draw.text((cx + 16, card_y + 16), title, fill=(33, 37, 41), font=font_nav)
         draw.text((cx + 16, card_y + 48), desc, fill=(100, 100, 100), font=font_body)
         # Buy button
         draw.rectangle([cx + 16, card_y + 130, cx + 120, card_y + 160], fill=(0, 123, 255))
         draw.text((cx + 30, card_y + 135), "Buy Now", fill=(255, 255, 255), font=font_body)
-        regions.append(GroundTruthRegion(
-            role="card", text=f"{title}\n{desc}\nBuy Now",
-            bbox=(cx, card_y, cx + 290, card_y + 180),
-        ))
+        regions.append(
+            GroundTruthRegion(
+                role="card",
+                text=f"{title}\n{desc}\nBuy Now",
+                bbox=(cx, card_y, cx + 290, card_y + 180),
+            )
+        )
 
     # Footer
     footer_y = H - 60
@@ -277,10 +311,13 @@ def make_mobile_scene() -> SyntheticScene:
         draw.rectangle([0, y, W, y + 70], fill=(255, 255, 255), outline=(240, 240, 240))
         draw.text((20, y + 12), title, fill=(33, 33, 33), font=font_item)
         draw.text((20, y + 36), subtitle, fill=(130, 130, 130), font=font_small)
-        regions.append(GroundTruthRegion(
-            role="label", text=f"{title}\n{subtitle}",
-            bbox=(0, y, W, y + 70),
-        ))
+        regions.append(
+            GroundTruthRegion(
+                role="label",
+                text=f"{title}\n{subtitle}",
+                bbox=(0, y, W, y + 70),
+            )
+        )
 
     # Bottom nav
     draw.rectangle([0, H - BOTTOM_NAV_H, W, H], fill=(255, 255, 255))
@@ -290,10 +327,13 @@ def make_mobile_scene() -> SyntheticScene:
     for i, item in enumerate(nav_items):
         x = 30 + i * 130
         draw.text((x, H - 35), item, fill=(98, 0, 238), font=font_item)
-    regions.append(GroundTruthRegion(
-        role="nav", text=nav_text,
-        bbox=(0, H - BOTTOM_NAV_H, W, H),
-    ))
+    regions.append(
+        GroundTruthRegion(
+            role="nav",
+            text=nav_text,
+            bbox=(0, H - BOTTOM_NAV_H, W, H),
+        )
+    )
 
     all_text = "\n".join(r.text for r in regions)
     gt = GroundTruth(
@@ -343,13 +383,18 @@ def make_chat_scene() -> SyntheticScene:
             bx1, bx2 = 20, 480
         else:
             bx1, bx2 = 300, 780
-        draw.rectangle([bx1, msg_y, bx2, msg_y + 44], fill=(45, 45, 48) if is_left else (0, 92, 175))
+        draw.rectangle(
+            [bx1, msg_y, bx2, msg_y + 44], fill=(45, 45, 48) if is_left else (0, 92, 175)
+        )
         draw.text((bx1 + 12, msg_y + 4), sender, fill=(160, 160, 255), font=font_msg)
         draw.text((bx1 + 12, msg_y + 22), text[:60], fill=(220, 220, 220), font=font_msg)
-        regions.append(GroundTruthRegion(
-            role="body", text=full_text,
-            bbox=(bx1, msg_y, bx2, msg_y + 44),
-        ))
+        regions.append(
+            GroundTruthRegion(
+                role="body",
+                text=full_text,
+                bbox=(bx1, msg_y, bx2, msg_y + 44),
+            )
+        )
         msg_y += 56
 
     # Input
@@ -359,8 +404,12 @@ def make_chat_scene() -> SyntheticScene:
     draw.text((28, H - INPUT_H + 16), input_text, fill=(120, 120, 120), font=font_input)
     draw.rectangle([W - 70, H - INPUT_H + 8, W - 16, H - 8], fill=(0, 123, 255))
     draw.text((W - 58, H - INPUT_H + 16), "Send", fill=(255, 255, 255), font=font_input)
-    regions.append(GroundTruthRegion(role="input", text=input_text, bbox=(16, H - INPUT_H + 8, W - 80, H - 8)))
-    regions.append(GroundTruthRegion(role="button", text="Send", bbox=(W - 70, H - INPUT_H + 8, W - 16, H - 8)))
+    regions.append(
+        GroundTruthRegion(role="input", text=input_text, bbox=(16, H - INPUT_H + 8, W - 80, H - 8))
+    )
+    regions.append(
+        GroundTruthRegion(role="button", text="Send", bbox=(W - 70, H - INPUT_H + 8, W - 16, H - 8))
+    )
 
     all_text = "\n".join(r.text for r in regions)
     gt = GroundTruth(
@@ -401,10 +450,13 @@ def make_dashboard_scene() -> SyntheticScene:
     # Heading
     heading_text = "Analytics Overview"
     draw.text((SIDEBAR_W + 40, 30), heading_text, fill=(30, 41, 59), font=font_heading)
-    regions.append(GroundTruthRegion(
-        role="heading", text=heading_text,
-        bbox=(SIDEBAR_W + 40, 30, SIDEBAR_W + 400, 60),
-    ))
+    regions.append(
+        GroundTruthRegion(
+            role="heading",
+            text=heading_text,
+            bbox=(SIDEBAR_W + 40, 30, SIDEBAR_W + 400, 60),
+        )
+    )
 
     # KPI cards
     kpis = [
@@ -423,10 +475,13 @@ def make_dashboard_scene() -> SyntheticScene:
         color = (34, 197, 94) if change.startswith("+") else (239, 68, 68)
         draw.text((cx + 20, card_y + 85), change, fill=color, font=font_kpi_label)
         kpi_texts.append(f"{label}: {value} ({change})")
-    regions.append(GroundTruthRegion(
-        role="card", text="\n".join(kpi_texts),
-        bbox=(SIDEBAR_W + 40, card_y, W - 40, card_y + 120),
-    ))
+    regions.append(
+        GroundTruthRegion(
+            role="card",
+            text="\n".join(kpi_texts),
+            bbox=(SIDEBAR_W + 40, card_y, W - 40, card_y + 120),
+        )
+    )
 
     # Data table
     table_y = card_y + 150
@@ -435,10 +490,13 @@ def make_dashboard_scene() -> SyntheticScene:
     header_text = "  ".join(headers)
     for j, h in enumerate(headers):
         draw.text((SIDEBAR_W + 60 + j * 230, table_y + 6), h, fill=(80, 90, 110), font=font_table)
-    regions.append(GroundTruthRegion(
-        role="heading", text=header_text,
-        bbox=(SIDEBAR_W + 40, table_y, W - 40, table_y + 30),
-    ))
+    regions.append(
+        GroundTruthRegion(
+            role="heading",
+            text=header_text,
+            bbox=(SIDEBAR_W + 40, table_y, W - 40, table_y + 30),
+        )
+    )
 
     # Table rows — include PII for the privacy benchmark
     rows = [
@@ -456,10 +514,13 @@ def make_dashboard_scene() -> SyntheticScene:
         for j, cell in enumerate(row):
             draw.text((SIDEBAR_W + 60 + j * 230, ry + 6), cell, fill=(50, 50, 50), font=font_table)
         row_texts.append("  ".join(row))
-    regions.append(GroundTruthRegion(
-        role="body", text="\n".join(row_texts),
-        bbox=(SIDEBAR_W + 40, table_y + 34, W - 40, table_y + 34 + len(rows) * 32),
-    ))
+    regions.append(
+        GroundTruthRegion(
+            role="body",
+            text="\n".join(row_texts),
+            bbox=(SIDEBAR_W + 40, table_y + 34, W - 40, table_y + 34 + len(rows) * 32),
+        )
+    )
 
     all_text = "\n".join(r.text for r in regions)
     gt = GroundTruth(

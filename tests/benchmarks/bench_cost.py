@@ -33,8 +33,8 @@ from tests.research.synthetic_scenes import SyntheticScene, build_all_scenes
 # ---------------------------------------------------------------------------
 
 LLM_PRICING: dict[str, float] = {
-    "GPT-4o":       0.0025,
-    "GPT-4-Turbo":  0.01,
+    "GPT-4o": 0.0025,
+    "GPT-4-Turbo": 0.01,
     "Claude-3.5-Sonnet": 0.003,
     "Claude-3-Opus": 0.015,
     "Gemini-1.5-Pro": 0.00125,
@@ -44,7 +44,7 @@ LLM_PRICING: dict[str, float] = {
 
 # Approximate vision token cost per image (based on typical 512×512 tile usage)
 VISION_TOKENS_PER_IMAGE: dict[str, int] = {
-    "small (640×480)":   340,
+    "small (640×480)": 340,
     "medium (1024×768)": 765,
     "large (1920×1080)": 1105,
     "xlarge (2560×1440)": 1530,
@@ -54,6 +54,7 @@ VISION_TOKENS_PER_IMAGE: dict[str, int] = {
 # ---------------------------------------------------------------------------
 # Result types
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class TierCostResult:
@@ -77,6 +78,7 @@ class CostBenchmarkResults:
 # Pipeline runner that avoids the self.ocr.name crash
 # ---------------------------------------------------------------------------
 
+
 def _safe_pipeline_run(pipeline: IrpAIPipeline, image: object) -> ContextPack | None:
     """Run the pipeline, catching the OCR engine name resolution crash."""
     try:
@@ -92,7 +94,9 @@ def _safe_pipeline_run(pipeline: IrpAIPipeline, image: object) -> ContextPack | 
         ocr_result = pipeline._run_ocr(normalized)
         layout = pipeline._layout.analyze(ocr_result, detections)
         pack = pipeline._assembler.assemble(
-            layout=layout, ocr=ocr_result, detections=detections,
+            layout=layout,
+            ocr=ocr_result,
+            detections=detections,
         )
         return pack
     except Exception:
@@ -102,6 +106,7 @@ def _safe_pipeline_run(pipeline: IrpAIPipeline, image: object) -> ContextPack | 
 # ---------------------------------------------------------------------------
 # Benchmark runner
 # ---------------------------------------------------------------------------
+
 
 def run_cost_benchmark() -> CostBenchmarkResults:
     """Execute the full cost analysis benchmark."""
@@ -172,6 +177,7 @@ def _benchmark_single(
         mem_after = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
         # On macOS ru_maxrss is in bytes; on Linux it's in KB
         import platform
+
         if platform.system() == "Darwin":
             peak_mb = mem_after / (1024 * 1024)
         else:

@@ -31,6 +31,7 @@ log = get_logger("layout")
 # Semantic region — the unified unit after merging detection + OCR
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class SemanticRegion:
     """
@@ -86,9 +87,7 @@ class LayoutResult:
     @property
     def full_text(self) -> str:
         ordered = (
-            [self.regions[i] for i in self.reading_order]
-            if self.reading_order
-            else self.regions
+            [self.regions[i] for i in self.reading_order] if self.reading_order else self.regions
         )
         return "\n".join(r.text for r in ordered if r.text.strip())
 
@@ -96,6 +95,7 @@ class LayoutResult:
 # ---------------------------------------------------------------------------
 # Analyzer
 # ---------------------------------------------------------------------------
+
 
 class LayoutAnalyzer:
     """
@@ -138,13 +138,15 @@ class LayoutAnalyzer:
         if detections:
             for det in detections.detections:
                 role = self._detection_label_to_role(det.label)
-                det_regions.append(SemanticRegion(
-                    role=role,
-                    bbox=det.bbox,
-                    confidence=det.confidence,
-                    source="detection",
-                    meta={"detection_label": det.label},
-                ))
+                det_regions.append(
+                    SemanticRegion(
+                        role=role,
+                        bbox=det.bbox,
+                        confidence=det.confidence,
+                        source="detection",
+                        meta={"detection_label": det.label},
+                    )
+                )
 
         # If detection produced a single catch-all region, prefer OCR-driven
         # segmentation so we can split mobile UIs into meaningful parts.
@@ -174,9 +176,7 @@ class LayoutAnalyzer:
 
             if matched_text_parts:
                 dr.text = "\n".join(matched_text_parts)
-                dr.confidence = (
-                    dr.confidence + sum(matched_confs) / len(matched_confs)
-                ) / 2
+                dr.confidence = (dr.confidence + sum(matched_confs) / len(matched_confs)) / 2
 
             regions.append(dr)
 
@@ -190,14 +190,16 @@ class LayoutAnalyzer:
                 continue
 
             role = self._classify_text_block(block, median_font)
-            regions.append(SemanticRegion(
-                role=role,
-                bbox=block.bbox,
-                text=block.text,
-                confidence=block.confidence,
-                source="ocr",
-                meta={"font_size": block.estimated_font_size},
-            ))
+            regions.append(
+                SemanticRegion(
+                    role=role,
+                    bbox=block.bbox,
+                    text=block.text,
+                    confidence=block.confidence,
+                    source="ocr",
+                    meta={"font_size": block.estimated_font_size},
+                )
+            )
 
         # -- Step 4: merge nearby regions of the same role ------------------
         regions = self._merge_nearby(regions)

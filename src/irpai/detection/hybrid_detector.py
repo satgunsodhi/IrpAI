@@ -107,7 +107,7 @@ class HybridDetector(BaseDetector):
 
         elapsed_ms = (time.perf_counter() - t0) * 1000
         return DetectionOutput(
-            detections=all_detections[:self.max_detections],
+            detections=all_detections[: self.max_detections],
             image_size=(w, h),
             model_name=self.name,
             inference_ms=round(elapsed_ms, 1),

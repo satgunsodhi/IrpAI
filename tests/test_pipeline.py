@@ -64,7 +64,6 @@ class TestPipelineInit:
         assert pipeline.detector.use_ml is True
 
 
-
 class TestPipelineImageHandling:
     """Test that the pipeline accepts various image input types."""
 
@@ -101,12 +100,14 @@ class TestImageUtils:
 
     def test_load_pil_image(self) -> None:
         from irpai.utils.image import load_image
+
         img = _make_screenshot()
         loaded = load_image(img)
         assert loaded.mode == "RGB"
 
     def test_load_numpy_image(self) -> None:
         from irpai.utils.image import load_image
+
         arr = np.zeros((100, 200, 3), dtype=np.uint8)
         loaded = load_image(arr)
         assert loaded.mode == "RGB"
@@ -114,18 +115,21 @@ class TestImageUtils:
 
     def test_crop_region(self) -> None:
         from irpai.utils.image import crop_region
+
         img = _make_screenshot(800, 600)
         cropped = crop_region(img, (100, 100, 300, 200))
         assert cropped.size == (200, 100)
 
     def test_crop_with_padding(self) -> None:
         from irpai.utils.image import crop_region
+
         img = _make_screenshot(800, 600)
         cropped = crop_region(img, (100, 100, 300, 200), padding=10)
         assert cropped.size == (220, 120)
 
     def test_compute_iou(self) -> None:
         from irpai.utils.image import compute_iou
+
         # Identical boxes → IoU = 1.0
         assert compute_iou((0, 0, 100, 100), (0, 0, 100, 100)) == 1.0
         # Non-overlapping → IoU = 0.0
@@ -136,14 +140,17 @@ class TestImageUtils:
 
     def test_merge_boxes(self) -> None:
         from irpai.utils.image import merge_boxes
+
         merged = merge_boxes([(10, 20, 100, 50), (80, 40, 200, 100)])
         assert merged == (10, 20, 200, 100)
 
     def test_box_area(self) -> None:
         from irpai.utils.image import box_area
+
         assert box_area((0, 0, 100, 50)) == 5000
         assert box_area((0, 0, 0, 0)) == 0
 
     def test_box_center(self) -> None:
         from irpai.utils.image import box_center
+
         assert box_center((0, 0, 100, 100)) == (50.0, 50.0)

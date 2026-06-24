@@ -141,6 +141,7 @@ async def system_info():
 
     try:
         import torch
+
         components["pytorch"] = {
             "available": True,
             "version": torch.__version__,
@@ -151,12 +152,14 @@ async def system_info():
 
     try:
         import cv2
+
         components["opencv"] = {"available": True, "version": cv2.__version__}
     except ImportError:
         components["opencv"] = {"available": False}
 
     try:
         import paddleocr
+
         components["paddleocr"] = {"available": True}
     except ImportError:
         components["paddleocr"] = {"available": False}

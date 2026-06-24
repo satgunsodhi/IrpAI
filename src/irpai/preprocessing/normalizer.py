@@ -30,6 +30,7 @@ log = get_logger("preprocessing")
 # Orientation detection (ported from irpai.old)
 # ---------------------------------------------------------------------------
 
+
 class OrientationDetector:
     """
     Detect and correct image orientation using Hough-line analysis.
@@ -57,8 +58,12 @@ class OrientationDetector:
 
         edges = cv2.Canny(gray, 50, 150)
         lines = cv2.HoughLinesP(
-            edges, 1, np.pi / 180,
-            threshold=80, minLineLength=50, maxLineGap=10,
+            edges,
+            1,
+            np.pi / 180,
+            threshold=80,
+            minLineLength=50,
+            maxLineGap=10,
         )
 
         if lines is None or len(lines) < 5:
@@ -115,6 +120,7 @@ class OrientationDetector:
 # ---------------------------------------------------------------------------
 # Normalizer
 # ---------------------------------------------------------------------------
+
 
 class Normalizer:
     """
@@ -302,6 +308,7 @@ class Normalizer:
 # Result container
 # ---------------------------------------------------------------------------
 
+
 class NormalizedImage:
     """
     Bundle of preprocessed image variants produced by :class:`Normalizer`.
@@ -323,8 +330,12 @@ class NormalizedImage:
     """
 
     __slots__ = (
-        "color", "ocr_ready", "original_size", "processed_size",
-        "scale_factor", "quality_metrics",
+        "color",
+        "ocr_ready",
+        "original_size",
+        "processed_size",
+        "scale_factor",
+        "quality_metrics",
     )
 
     def __init__(
@@ -344,8 +355,4 @@ class NormalizedImage:
         self.quality_metrics = quality_metrics or {}
 
     def __repr__(self) -> str:
-        return (
-            f"NormalizedImage(size={self.processed_size}, "
-            f"scale={self.scale_factor:.2f})"
-        )
-
+        return f"NormalizedImage(size={self.processed_size}, scale={self.scale_factor:.2f})"

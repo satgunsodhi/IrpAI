@@ -27,9 +27,9 @@ def create_ocr_engine(config: OCRConfig | None = None) -> BaseOCR:
     try:
         import easyocr as _  # noqa: F401
         from irpai.ocr.easy_ocr import EasyOCREngine
+
         return EasyOCREngine(cfg)
     except ImportError as exc:
         raise RuntimeError(
-            "EasyOCR is required but not installed. "
-            "Install with: pip install -e .[ocr-easyocr]"
+            "EasyOCR is required but not installed. Install with: pip install -e .[ocr-easyocr]"
         ) from exc

@@ -32,6 +32,7 @@ class EasyOCREngine(BaseOCR):
 
     def __init__(self, config: OCRConfig) -> None:
         import easyocr  # type: ignore[import-untyped, import-not-found]
+
         self.config = config
 
         lang_map = {"en": "en", "ch": "ch_sim", "ja": "ja", "ko": "ko"}

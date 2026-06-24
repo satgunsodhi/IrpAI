@@ -51,10 +51,12 @@ class TestNormalizer:
 
     def test_adaptive_threshold(self) -> None:
         img = _make_test_image(400, 300)
-        normalizer = Normalizer(PreprocessingConfig(
-            grayscale_ocr=True,
-            adaptive_threshold=True,
-        ))
+        normalizer = Normalizer(
+            PreprocessingConfig(
+                grayscale_ocr=True,
+                adaptive_threshold=True,
+            )
+        )
         result = normalizer.normalize(img)
 
         assert result.ocr_ready.mode == "L"

@@ -27,9 +27,11 @@ from tests.research.synthetic_scenes import SyntheticScene, build_all_scenes
 # Result types
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class LayerTiming:
     """Timing for a single pipeline layer."""
+
     layer: str
     times_ms: list[float] = field(default_factory=list)
 
@@ -60,6 +62,7 @@ class LayerTiming:
 @dataclass
 class ScaleProfile:
     """Latency at a specific resolution."""
+
     resolution: str
     width: int
     height: int
@@ -151,11 +154,14 @@ def run_latency_benchmark() -> list[LatencyBenchmarkResults]:
                     pass
                 times.append((time.perf_counter() - t0) * 1000)
             avg = sum(times) / len(times) if times else 0
-            results.scale_profiles.append(ScaleProfile(
-                resolution=f"{w}×{h}",
-                width=w, height=h,
-                latency_ms=round(avg, 1),
-            ))
+            results.scale_profiles.append(
+                ScaleProfile(
+                    resolution=f"{w}×{h}",
+                    width=w,
+                    height=h,
+                    latency_ms=round(avg, 1),
+                )
+            )
 
         # Throughput
         if results.e2e_times_ms:
@@ -193,6 +199,7 @@ def _profile_run(
             ocr_result = pipeline._run_ocr(normalized)
         except Exception:
             from irpai.ocr.base import OCRResult
+
             w, h = normalized.processed_size
             ocr_result = OCRResult(image_size=(w, h))
         timings["ocr"] = round((time.perf_counter() - t0) * 1000, 2)

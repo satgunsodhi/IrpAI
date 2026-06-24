@@ -32,10 +32,10 @@ logger = logging.getLogger(__name__)
 
 # Mapping from COCO classes to UI element types (for transfer learning)
 COCO_TO_UI_MAPPING = {
-    1: UIElementType.CONTAINER,   # person → container (placeholder)
+    1: UIElementType.CONTAINER,  # person → container (placeholder)
     73: UIElementType.TEXT_BLOCK,  # book → text_block
-    74: UIElementType.IMAGE,      # clock → image
-    77: UIElementType.BUTTON,     # cell phone → button (placeholder)
+    74: UIElementType.IMAGE,  # clock → image
+    77: UIElementType.BUTTON,  # cell phone → button (placeholder)
     84: UIElementType.TEXT_BLOCK,  # book → text_block
 }
 
@@ -93,7 +93,7 @@ class HeuristicUIDetector:
         elapsed_ms = (time.perf_counter() - start_time) * 1000
         logger.info(f"Heuristic detection: {len(detections)} elements in {elapsed_ms:.1f}ms")
 
-        return detections[:self.config.max_detections]
+        return detections[: self.config.max_detections]
 
     def _detect_rectangles(self, gray: np.ndarray, h: int, w: int) -> list[UIDetection]:
         """Detect rectangular UI elements using edge detection and contour analysis."""
@@ -116,7 +116,7 @@ class HeuristicUIDetector:
 
             # Filter by size relative to image
             min_area = (h * w) * 0.0005  # Min 0.05% of image
-            max_area = (h * w) * 0.8     # Max 80% of image
+            max_area = (h * w) * 0.8  # Max 80% of image
 
             if area < min_area or area > max_area:
                 continue
@@ -187,7 +187,7 @@ class HeuristicUIDetector:
         # Morphological operations to connect text components
         kernel_horizontal = cv2.getStructuringElement(cv2.MORPH_RECT, (20, 1))
         kernel_vertical = cv2.getStructuringElement(cv2.MORPH_RECT, (1, 10))
-        
+
         # Dilate to connect nearby text
         dilated = cv2.dilate(binary, kernel_horizontal, iterations=1)
         dilated = cv2.dilate(dilated, kernel_vertical, iterations=1)
@@ -204,15 +204,15 @@ class HeuristicUIDetector:
 
         for i in range(1, num_labels):  # Skip background (label 0)
             x, y, bw, bh, area = stats[i]
-            
+
             if area < min_area or area > max_area:
                 continue
-            
+
             # Filter by aspect ratio (text regions are typically wider than tall)
             aspect_ratio = bw / max(bh, 1)
             if aspect_ratio < 0.2 or aspect_ratio > 50:
                 continue
-            
+
             bboxes.append([x, y, x + bw, y + bh])
 
         if not bboxes:
@@ -234,9 +234,7 @@ class HeuristicUIDetector:
 
         return detections
 
-    def _cluster_text_regions(
-        self, bboxes: list[list[int]], h: int, w: int
-    ) -> list[list[int]]:
+    def _cluster_text_regions(self, bboxes: list[list[int]], h: int, w: int) -> list[list[int]]:
         """Cluster nearby text bounding boxes into text block regions."""
         if not bboxes:
             return []
@@ -323,9 +321,11 @@ class NeuralUIDetector:
         self.config = config or VisionConfig()
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
         self.model = self._load_model()
-        self.transform = transforms.Compose([
-            transforms.ToTensor(),
-        ])
+        self.transform = transforms.Compose(
+            [
+                transforms.ToTensor(),
+            ]
+        )
         logger.info(f"NeuralUIDetector initialized on {self.device}")
 
     def _load_model(self) -> nn.Module:
@@ -351,9 +351,7 @@ class NeuralUIDetector:
 
         # Optional: quantize for speed
         if self.config.use_quantized and self.device == "cpu":
-            model = torch.quantization.quantize_dynamic(
-                model, {nn.Linear}, dtype=torch.qint8
-            )
+            model = torch.quantization.quantize_dynamic(model, {nn.Linear}, dtype=torch.qint8)
             logger.info("Model quantized to INT8")
 
         return model
@@ -419,7 +417,7 @@ class NeuralUIDetector:
         elapsed_ms = (time.perf_counter() - start_time) * 1000
         logger.info(f"Neural detection: {len(detections)} elements in {elapsed_ms:.1f}ms")
 
-        return detections[:self.config.max_detections]
+        return detections[: self.config.max_detections]
 
     def _map_label_to_type(self, label: int) -> UIElementType:
         """Map model output label to UIElementType."""

@@ -21,6 +21,7 @@ from typing import Any, Optional
 # Enums
 # ---------------------------------------------------------------------------
 
+
 class UIElementType(str, Enum):
     """Semantic type of a detected UI element."""
 
@@ -52,6 +53,7 @@ class LayoutRegion(str, Enum):
 # ---------------------------------------------------------------------------
 # Core geometry
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class BoundingBox:
@@ -116,7 +118,9 @@ class BoundingBox:
         return (int(self.x1), int(self.y1), int(self.x2), int(self.y2))
 
     @classmethod
-    def from_tuple(cls, bbox: tuple[int, int, int, int] | tuple[float, float, float, float]) -> BoundingBox:
+    def from_tuple(
+        cls, bbox: tuple[int, int, int, int] | tuple[float, float, float, float]
+    ) -> BoundingBox:
         """Create from a ``(x1, y1, x2, y2)`` tuple."""
         return cls(x1=float(bbox[0]), y1=float(bbox[1]), x2=float(bbox[2]), y2=float(bbox[3]))
 
@@ -127,6 +131,7 @@ class BoundingBox:
 # ---------------------------------------------------------------------------
 # Detection models
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class UIDetection:
@@ -169,7 +174,8 @@ class UIDetection:
             bbox=BoundingBox.from_tuple(det.bbox),
             element_type=elem_type,
             confidence=det.confidence,
-            text_region=elem_type in (
+            text_region=elem_type
+            in (
                 UIElementType.BUTTON,
                 UIElementType.TEXT_INPUT,
                 UIElementType.TEXT_BLOCK,
@@ -195,6 +201,7 @@ class UIDetection:
 # ---------------------------------------------------------------------------
 # OCR / text models
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class TextExtraction:
@@ -261,6 +268,7 @@ class TextExtraction:
 # Spatial relationships
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class SpatialRelationship:
     """Spatial relationship between two UI elements."""
@@ -285,6 +293,7 @@ class SpatialRelationship:
 # Layout structure
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class LayoutStructure:
     """Hierarchical layout of detected UI elements by screen region."""
@@ -305,6 +314,7 @@ class LayoutStructure:
 # ---------------------------------------------------------------------------
 # Structured context (complete pipeline output)
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class StructuredContext:
@@ -385,31 +395,39 @@ class StructuredContext:
             except ValueError:
                 elem_type = UIElementType.UNKNOWN
 
-            detections.append(UIDetection(
-                bbox=BoundingBox.from_tuple(region.bbox) if region.bbox else BoundingBox(x1=0, y1=0, x2=0, y2=0),
-                element_type=elem_type,
-                confidence=region.confidence,
-                text=region.text or None,
-            ))
+            detections.append(
+                UIDetection(
+                    bbox=BoundingBox.from_tuple(region.bbox)
+                    if region.bbox
+                    else BoundingBox(x1=0, y1=0, x2=0, y2=0),
+                    element_type=elem_type,
+                    confidence=region.confidence,
+                    text=region.text or None,
+                )
+            )
 
         # Extract text regions
         text_extractions: list[TextExtraction] = []
         for region in pack.regions:
             if region.text and region.text.strip():
-                text_extractions.append(TextExtraction(
-                    text=region.text,
-                    bbox=BoundingBox.from_tuple(region.bbox) if region.bbox else BoundingBox(x1=0, y1=0, x2=0, y2=0),
-                    confidence=region.confidence,
-                ))
+                text_extractions.append(
+                    TextExtraction(
+                        text=region.text,
+                        bbox=BoundingBox.from_tuple(region.bbox)
+                        if region.bbox
+                        else BoundingBox(x1=0, y1=0, x2=0, y2=0),
+                        confidence=region.confidence,
+                    )
+                )
 
         # Collect full text
-        all_text = " ".join(
-            r.text for r in pack.regions if r.text and r.text.strip()
-        )
+        all_text = " ".join(r.text for r in pack.regions if r.text and r.text.strip())
 
         return cls(
             platform=pack.summary.app_type or "unknown",
-            app_title=pack.summary.description[:100] if pack.summary.description else "Unknown Application",
+            app_title=pack.summary.description[:100]
+            if pack.summary.description
+            else "Unknown Application",
             all_text=all_text,
             text_extractions=text_extractions,
             ui_detections=detections,
@@ -424,6 +442,7 @@ class StructuredContext:
 # ---------------------------------------------------------------------------
 # Pipeline result (top-level output)
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class PipelineResult:

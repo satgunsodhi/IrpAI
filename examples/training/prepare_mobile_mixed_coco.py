@@ -37,7 +37,9 @@ class Record:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Prepare mixed COCO subset with mobile coverage")
-    parser.add_argument("--output-root", type=Path, default=Path("data/screenspot_mobile_mixed_coco"))
+    parser.add_argument(
+        "--output-root", type=Path, default=Path("data/screenspot_mobile_mixed_coco")
+    )
     parser.add_argument("--total-samples", type=int, default=240)
     parser.add_argument("--val-ratio", type=float, default=0.2)
     parser.add_argument(
@@ -206,7 +208,9 @@ def _sample_mixed_records(
     return sampled[:total_samples]
 
 
-def _split_records(records: list[Record], val_ratio: float, seed: int) -> tuple[list[Record], list[Record]]:
+def _split_records(
+    records: list[Record], val_ratio: float, seed: int
+) -> tuple[list[Record], list[Record]]:
     rng = random.Random(seed)
     by_bucket: dict[tuple[str, str], list[Record]] = {}
     for rec in records:
@@ -297,7 +301,9 @@ def _ensure_mobile_v2_images(out_root: Path, needed_names: set[str]) -> dict[str
     return index
 
 
-def _clamp_bbox(x: float, y: float, w: float, h: float, width: int, height: int) -> tuple[float, float, float, float] | None:
+def _clamp_bbox(
+    x: float, y: float, w: float, h: float, width: int, height: int
+) -> tuple[float, float, float, float] | None:
     x = max(0.0, min(x, float(width - 1)))
     y = max(0.0, min(y, float(height - 1)))
     w = max(1.0, min(w, float(width) - x))
@@ -406,12 +412,12 @@ def main() -> None:
         local_dir=str(out_root / "raw" / "screenspot_pro"),
         allow_patterns=["annotations/*.json", "README.md", "eval.yaml"],
     )
-    
+
     # Download all v2 splits
     v2_splits = {
         "mobile_v2": "screenspot_mobile_v2.json",
         "desktop_v2": "screenspot_desktop_v2.json",
-        "web_v2": "screenspot_web_v2.json"
+        "web_v2": "screenspot_web_v2.json",
     }
     for filename in v2_splits.values():
         hf_hub_download(
@@ -422,10 +428,12 @@ def main() -> None:
         )
 
     pro_records = _load_pro_records(out_root / "raw" / "screenspot_pro")
-    
+
     v2_records = []
     for source_name, filename in v2_splits.items():
-        v2_records.extend(_load_v2_records(out_root / "raw" / "screenspot_v2", filename, source_name))
+        v2_records.extend(
+            _load_v2_records(out_root / "raw" / "screenspot_v2", filename, source_name)
+        )
 
     if not pro_records and not v2_records:
         raise RuntimeError("No usable records found")
@@ -444,7 +452,7 @@ def main() -> None:
             mobile_min_ratio=args.mobile_min_ratio,
             seed=args.seed,
         )
-        
+
     train_records, val_records = _split_records(sampled, val_ratio=args.val_ratio, seed=args.seed)
 
     needed_v2 = {r.image_rel for r in sampled if r.source in v2_splits}
