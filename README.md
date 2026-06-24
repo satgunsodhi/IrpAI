@@ -226,7 +226,7 @@ tests/
 ## Build and Release
 
 See:
-- BUILD.md
+- build_all.py (build script)
 - RELEASE.md
 
 ## Roadmap

@@ -134,7 +134,7 @@ class LayoutConfig:
 class OutputConfig:
     """Context-pack output format settings."""
 
-    format: Literal["json", "markdown", "yaml"] = "json"
+    format: Literal["json", "markdown"] = "json"
     """Primary output format."""
 
     include_bboxes: bool = True

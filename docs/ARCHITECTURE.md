@@ -172,7 +172,7 @@ Purpose:
 
 ### Optional: VLM (`irpai.vlm`)
 
-The `irpai.vlm` package contains a Florence-2 backend (`florence.py`) and an abstract base interface (`base.py`). These modules exist in the codebase but are **not wired into the active pipeline**. The VLM stage is planned roadmap work (see section 5.3 and section 9).
+The `irpai.vlm` package contains a Florence-2 backend (`florence.py`) and an abstract base interface (`base.py`). These modules exist in the codebase but are **not wired into the active pipeline**. The VLM stage is planned roadmap work (see section 10).
 
 ---
 
@@ -398,26 +398,5 @@ This document should be kept aligned with the runtime implementation in:
 - `src/irpai/config.py`
 - `src/irpai/detection/`
 - `src/irpai/models.py`
-ine)
-
-### Long-term
-
-- Optional VLM enrichment pass (Florence-2 or equivalent) as a pluggable post-processor
-- Richer region-level scene understanding and app-type detection
-- Multi-language OCR support
-
----
-
-This document should be kept aligned with the runtime implementation in:
-- `src/irpai/pipeline.py`
-- `src/irpai/config.py`
-- `src/irpai/detection/`
-- `src/irpai/models.py`
-end strategy
-
-Keep this document aligned with:
-- `src/irpai/pipeline.py`
-- `src/irpai/config.py`
 - `src/irpai/context/schema.py`
 - `src/irpai/context/formatter.py`
-- `src/irpai/detection/`
